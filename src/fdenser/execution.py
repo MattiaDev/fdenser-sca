@@ -6,6 +6,11 @@ from glob import glob
 from pathlib import Path
 
 import numpy as np
+import yaml
+
+from .img import fitness_metrics
+from . import sca
+from .img.data import load_dataset as img_load_dataset
 
 
 def save_pop(population, run_path, gen):
@@ -228,3 +233,43 @@ def unpickle_population(run_path):
 
     else:
         return None
+
+
+def load_config(config_file):
+    """
+        Load yml configuration file.
+
+
+        Parameters
+        ----------
+        config_file : str
+            path to the configuration file
+
+        Returns
+        -------
+        config : dict
+            configuration dictionary
+    """
+
+    with open(Path(config_file), 'r') as f:
+        config = yaml.safe_load(f)
+
+    if config['evolutionary']['fitness_metric'] == 'accuracy':
+        config['evolutionary']['fitness_function'] = fitness_metrics.accuracy
+    elif config['evolutionary']['fitness_metric'] == 'mse':
+        config['evolutionary']['fitness_function'] = fitness_metrics.mse
+    else:
+        raise ValueError(
+            'Invalid fitness metric in config file: '
+            f'{config["evolutionary"]["fitness_metric"]}'
+        )
+
+    return config
+
+
+def load_dataset(dataset_name):
+    if dataset_name in ('mnist', 'fashion-mnist'):
+        return img_load_dataset(dataset_name)
+    if dataset_name in ('ascad'):
+        return sca.sca_data.load_dataset(dataset_name)
+    raise ValueError(f'Unknown dataset name: {dataset_name}')

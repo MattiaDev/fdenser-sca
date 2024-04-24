@@ -322,8 +322,11 @@ def tf_evaluate(args):
 
     import tensorflow as tf
 
-    gpus = tf.config.experimental.list_physical_devices('GPU')
-    tf.config.experimental.set_memory_growth(gpus[0], True)
+    try:
+        gpus = tf.config.experimental.list_physical_devices('GPU')
+        tf.config.experimental.set_memory_growth(gpus[0], True)
+    except IndexError:
+        print('RUNNING ON CPU ONLY!')
 
     cnn_eval, phenotype, load_prev_weights, weights_save_path, \
         parent_weights_path, train_time, num_epochs, = args

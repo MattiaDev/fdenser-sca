@@ -27,6 +27,9 @@ classifiers = [
   "Programming Language :: Python"
 ]
 
+[project.scripts]
+fastdenser = "fdenser.cli:fast_denser_cli"
+
 [project.urls]
 # Homepage = "https://example.com"
 # Documentation = "https://readthedocs.org"

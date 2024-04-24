@@ -18,7 +18,6 @@ from keras.callbacks import ModelCheckpoint
 import os
 
 from .timed_stopping import TimedStopping
-from .utilities.data import load_dataset
 
 # TODO: future -- impose memory constraints
 # tf.config.experimental.set_virtual_device_configuration(
@@ -81,7 +80,7 @@ class Evaluator:
         """
 
         # define the dataset on which the models will be evaluated
-        self.dataset = load_dataset(dataset)
+        self.dataset = dataset
         # define the metric used to evaluate the models
         self.fitness_metric = fitness_metric
 

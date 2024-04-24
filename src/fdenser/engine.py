@@ -21,7 +21,6 @@ from os import makedirs
 from pathlib import Path
 from shutil import copyfile
 
-import yaml
 import numpy as np
 
 from .evaluator import Evaluator
@@ -31,9 +30,7 @@ from .execution import (
     save_pop,
     unpickle_population,
 )
-from .grammar import Grammar
 from .individual import Individual
-from .utilities import fitness_metrics
 
 # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -382,39 +379,7 @@ def mutation(individual, grammar, add_layer, re_use_layer, remove_layer,
     return ind
 
 
-def load_config(config_file):
-    """
-        Load yml configuration file.
-
-
-        Parameters
-        ----------
-        config_file : str
-            path to the configuration file
-
-        Returns
-        -------
-        config : dict
-            configuration dictionary
-    """
-
-    with open(Path(config_file), 'r') as f:
-        config = yaml.safe_load(f)
-
-    if config['evolutionary']['fitness_metric'] == 'accuracy':
-        config['evolutionary']['fitness_function'] = fitness_metrics.accuracy
-    elif config['evolutionary']['fitness_metric'] == 'mse':
-        config['evolutionary']['fitness_function'] = fitness_metrics.mse
-    else:
-        raise ValueError(
-            'Invalid fitness metric in config file: '
-            f'{config["evolutionary"]["fitness_metric"]}'
-        )
-
-    return config
-
-
-def main(run, dataset, config_file, grammar_path):
+def main(run, dataset, config, grammar):
     """
         (1+lambda)-ES
 
@@ -434,13 +399,7 @@ def main(run, dataset, config_file, grammar_path):
             path to the grammar file
     """
 
-    # load config file
-    config = load_config(config_file)
-
     run_path = Path(config["setup"]["save_path"], f'run_{run:02d}')
-
-    # load grammar
-    grammar = Grammar(grammar_path)
 
     # best fitness so far
     best_fitness = None
@@ -596,86 +555,3 @@ def main(run, dataset, config_file, grammar_path):
     best_test_acc = cnn_eval.testing_performance(
         str(Path(run_path, 'best.hdf5')))
     print('[%d] Best test accuracy: %f' % (run, best_test_acc))
-
-
-def process_input(argv):
-    """
-        Maps and checks the input parameters and call the main function.
-
-        Parameters
-        ----------
-        argv : list
-            argv from system
-    """
-
-    dataset = None
-    config_file = None
-    run = 0
-    grammar = None
-
-    try:
-        opts, args = getopt.getopt(
-            argv,
-            "hd:c:r:g:",
-            ["dataset=", "config=", "run=", "grammar="],
-        )
-    except getopt.GetoptError:
-        print('f_denser.py -d <dataset> -c <config> -r <run> -g <grammra>')
-        sys.exit(2)
-
-    for opt, arg in opts:
-        if opt == '-h':
-            print('f_denser.py -d <dataset> -c <config> -r <run> -g <grammra>')
-            sys.exit()
-
-        elif opt in ("-d", "--dataset"):
-            dataset = arg
-
-        elif opt in ("-c", "--config"):
-            config_file = arg
-
-        elif opt in ("-r", "--run"):
-            run = int(arg)
-
-        elif opt in ("-g", "--grammar"):
-            grammar = arg
-
-    error = False
-
-    # check if mandatory variables are all set
-    if dataset is None:
-        print('The dataset (-d) parameter is mandatory.')
-        error = True
-
-    if config_file is None:
-        print('The config. file parameter (-c) is mandatory.')
-        error = True
-
-    if grammar is None:
-        print('The grammar (-g) parameter is mandatory.')
-        error = True
-
-    if error:
-        print('f_denser.py -d <dataset> -c <config> -r <run> -g <grammar>')
-        exit(-1)
-
-    # check if files exist
-    if not os.path.isfile(grammar):
-        print('Grammar file does not exist.')
-        error = True
-
-    if not os.path.isfile(config_file):
-        print('Configuration file does not exist.')
-        error = True
-
-    if not error:
-        main(run, dataset, config_file, grammar)
-    else:
-        print('f_denser.py -d <dataset> -c <config> -r <run> -g <grammar>')
-
-
-if __name__ == '__main__':
-    import getopt
-    import sys
-
-    process_input(sys.argv[1:])
