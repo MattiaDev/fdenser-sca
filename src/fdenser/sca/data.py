@@ -5,6 +5,7 @@ import tensorflow as tf
 import contextlib
 import sys
 import h5py
+import numpy as np
 
 
 def prepare_data(x_train, y_train, x_test, y_test, n_classes):
@@ -59,7 +60,10 @@ def prepare_data(x_train, y_train, x_test, y_test, n_classes):
         'x_test': x_test, 'y_test': y_test
     }
 
-    return dataset
+    print('DS Shape', evo_x_train.shape)
+    print('Item Shape', evo_x_train[0].shape)
+
+    return dataset, evo_x_train[0].shape
 
 
 def load_dataset(dataset):
@@ -92,13 +96,23 @@ def load_dataset(dataset):
     if dataset == 'ascad':
         f = h5py.File('ASCAD.h5', 'r')
 
-        profiling_traces = f['Profiling_traces']['traces']
+        profiling_traces = np.array(f['Profiling_traces']['traces'])[..., np.newaxis]
         profiling_labels = f['Profiling_traces']['labels']
         profiling_labels = keras.utils.to_categorical(profiling_labels)
+
+        print(type(profiling_traces))
+        print(type(profiling_labels))
+        print(profiling_traces.shape)
+        print(profiling_labels.shape)
         
-        attack_traces = f['Attack_traces']['traces']
+        attack_traces = np.array(f['Attack_traces']['traces'])[..., np.newaxis]
         attack_labels = f['Attack_traces']['labels']
         attack_labels = keras.utils.to_categorical(attack_labels)
+
+        print(type(attack_traces))
+        print(type(attack_labels))
+        print(attack_traces.shape)
+        print(attack_labels.shape)
 
         x_train = profiling_traces
         y_train = profiling_labels
@@ -110,6 +124,6 @@ def load_dataset(dataset):
         print('Error: the dataset is not valid')
         sys.exit(-1)
 
-    dataset = prepare_data(x_train, y_train, x_test, y_test, n_classes)
+    dataset, input_shape = prepare_data(x_train, y_train, x_test, y_test, n_classes)
 
-    return dataset
+    return dataset, input_shape

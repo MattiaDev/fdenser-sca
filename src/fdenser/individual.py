@@ -75,7 +75,7 @@ class Individual:
                 Performs the evaluation of a candidate solution
     """
 
-    def __init__(self, network_structure, macro_rules, output_rule, ind_id):
+    def __init__(self, network_structure, macro_rules, input_shape, output_rule, ind_id):
         """
             Parameters
             ----------
@@ -95,6 +95,7 @@ class Individual:
         """
 
         self.network_structure = network_structure
+        self.input_shape = input_shape
         self.output_rule = output_rule
         self.macro_rules = macro_rules
         self.modules = []
@@ -219,7 +220,9 @@ class Individual:
                 quality of the candidate solutions
         """
 
+        print('Evaluating Individual')
         phenotype = self.decode(grammar)
+        print('Phenotype decoded')
         start = time()
 
         load_prev_weights = True
@@ -228,15 +231,19 @@ class Individual:
 
         train_time = self.train_time - self.current_time
 
-        num_pool_workers = 1
-        with contextlib.closing(Pool(num_pool_workers)) as po:
-            pool_results = po.map_async(
-                tf_evaluate,
-                [(cnn_eval, phenotype, load_prev_weights,
-                  weights_save_path, parent_weights_path,
-                  train_time, self.num_epochs)]
-            )
-            metrics = pool_results.get()[0]
+        # num_pool_workers = 1
+        # with contextlib.closing(Pool(num_pool_workers)) as po:
+        #     print('Pool reached')
+        #     pool_results = po.map_async(
+        #         tf_evaluate,
+        #         [(cnn_eval, phenotype, load_prev_weights,
+        #           weights_save_path, parent_weights_path,
+        #           train_time, self.num_epochs, self.input_shape)]
+        #     )
+        #     metrics = pool_results.get()[0]
+        metrics = tf_evaluate([cnn_eval, phenotype, load_prev_weights,
+            weights_save_path, parent_weights_path, train_time, self.num_epochs, self.input_shape])
+        print(metrics)
 
         if metrics is not None:
             if 'val_accuracy' in metrics:
@@ -320,29 +327,35 @@ def tf_evaluate(args):
             training data: loss and accuracy
     """
 
-    import tensorflow as tf
+    print('TF Evaluation', flush=True)
+    from time import sleep
+    sleep(1)
+    # import tensorflow as tf
 
-    try:
-        gpus = tf.config.experimental.list_physical_devices('GPU')
-        tf.config.experimental.set_memory_growth(gpus[0], True)
-    except IndexError:
-        print('RUNNING ON CPU ONLY!')
+    # try:
+    #     gpus = tf.config.experimental.list_physical_devices('GPU')
+    #     tf.config.experimental.set_memory_growth(gpus[0], True)
+    # except IndexError:
+    #     print('RUNNING ON CPU ONLY!', flush=True)
 
     cnn_eval, phenotype, load_prev_weights, weights_save_path, \
-        parent_weights_path, train_time, num_epochs, = args
+        parent_weights_path, train_time, num_epochs, input_shape = args
 
-    try:
-        return cnn_eval.evaluate(
-            phenotype,
-            load_prev_weights,
-            weights_save_path,
-            parent_weights_path,
-            train_time,
-            num_epochs
-        )
-    except tf.errors.ResourceExhaustedError:
-        keras.backend.clear_session()
-        return None
-    except TypeError:
-        keras.backend.clear_session()
-        return None
+    # try:
+    return cnn_eval.evaluate(
+        phenotype,
+        load_prev_weights,
+        weights_save_path,
+        parent_weights_path,
+        train_time,
+        num_epochs,
+        input_shape,
+    )
+    # except tf.errors.ResourceExhaustedError:
+    #     print('Memory Error', flush=True)
+    #     keras.backend.clear_session()
+    #     return None
+    # except TypeError:
+    #     print('Memory Error', flush=True)
+    #     keras.backend.clear_session()
+    #     return None

@@ -82,7 +82,15 @@ def prepare_data(x_train, y_train, x_test, y_test, n_classes=10):
         'x_test': x_test, 'y_test': y_test
     }
 
-    return dataset
+    print(type(evo_x_train))
+    print(type(evo_y_train))
+    print(evo_x_train.shape)
+    print(evo_y_train.shape)
+
+    print('DS Shape', evo_x_train.shape)
+    print('Item Shape', evo_x_train[0].shape)
+
+    return dataset, evo_x_train[0].shape
 
 
 def resize_data(args):
@@ -197,6 +205,6 @@ def load_dataset(dataset, shape=(32, 32)):
         print('Error: the dataset is not valid')
         sys.exit(-1)
 
-    dataset = prepare_data(x_train, y_train, x_test, y_test, n_classes)
+    dataset, input_shape = prepare_data(x_train, y_train, x_test, y_test, n_classes)
 
-    return dataset
+    return dataset, input_shape

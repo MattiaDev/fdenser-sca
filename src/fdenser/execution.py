@@ -9,8 +9,8 @@ import numpy as np
 import yaml
 
 from .img import fitness_metrics
-from . import sca
 from .img.data import load_dataset as img_load_dataset
+from .sca.data import load_dataset as sca_load_dataset
 
 
 def save_pop(population, run_path, gen):
@@ -271,5 +271,5 @@ def load_dataset(dataset_name):
     if dataset_name in ('mnist', 'fashion-mnist'):
         return img_load_dataset(dataset_name)
     if dataset_name in ('ascad'):
-        return sca.sca_data.load_dataset(dataset_name)
+        return sca_load_dataset(dataset_name)
     raise ValueError(f'Unknown dataset name: {dataset_name}')

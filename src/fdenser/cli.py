@@ -2,13 +2,6 @@ import argparse
 import os
 import sys
 
-from .engine import main
-from .execution import (
-    load_config,
-    load_dataset,
-)
-from .grammar import Grammar
-
 
 def fast_denser_cli():
     """
@@ -23,7 +16,9 @@ def fast_denser_cli():
     parser = argparse.ArgumentParser(
         prog='fastdenser',
         description='A neuroevolution engine to evolve CNNs',
-        epilog='Based on FastDenser++'
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog='Based on FastDenser++\nAn example invocation could be:'
+            '\n\nfastdenser -d fashion-mnist -c ../fdenser-sca/example/cpu.yml -r 11 -g ../fdenser-sca/example/cnn.grammar'
     )
     parser.add_argument("-c", "--config", help="YAML config file for the engine", required=True)
     parser.add_argument("-d", "--dataset", help="The name of the built-in dataset to load", required=True)
@@ -41,6 +36,13 @@ def fast_denser_cli():
         print('Configuration file does not exist.')
         sys.exit(-1)
 
+    from .engine import main
+    from .execution import (
+        load_config,
+        load_dataset,
+    )
+    from .grammar import Grammar
+
     # load config file
     config = load_config(args.config)
 
@@ -48,7 +50,7 @@ def fast_denser_cli():
     grammar = Grammar(args.grammar)
 
     # load dataset
-    evo_dataset = load_dataset(args.dataset)
+    evo_dataset, input_shape = load_dataset(args.dataset)
 
     # execute
-    main(args.run, evo_dataset, config, grammar)
+    main(args.run, evo_dataset, input_shape, config, grammar)

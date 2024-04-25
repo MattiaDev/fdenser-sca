@@ -25,7 +25,7 @@ from .timed_stopping import TimedStopping
 #     [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=50)],
 # )
 
-DEBUG = False
+DEBUG = True
 
 
 class Evaluator:
@@ -180,6 +180,7 @@ class Evaluator:
 
         # input layer
         inputs = keras.layers.Input(shape=input_size)
+        print(f'Input Size: {input_size}')
 
         # Create layers -- ADD NEW LAYERS HERE
         layers = []
@@ -286,19 +287,46 @@ class Evaluator:
             elif layer_type == 'conv1d':    # todo initializer
                 conv1d = keras.layers.Conv1D(
                     filters=int(layer_params['num-filters'][0]),
-                    kernel_size=int(layer_params['kernel-size'][0]),
-                    strides=int(layer_params['strides'][0]),
+                    kernel_size=int(layer_params['filter-shape'][0]),
+                    strides=int(layer_params['stride'][0]),
                     padding=layer_params['padding'][0],
-                    activation=layer_params['activation'][0],
+                    activation=layer_params['act'][0],
                     use_bias=eval(layer_params['bias'][0]),
                 )
-                layers.add(conv1d)
+                layers.append(conv1d)
+            
+            # average pooling layer
+            elif layer_type == 'pool-avg1d':
+                pool_avg1d = keras.layers.AveragePooling1D(
+                    pool_size=int(layer_params['kernel-size'][0]),
+                    strides=int(layer_params['stride'][0]),
+                    padding=layer_params['padding'][0],
+                )
+                layers.append(pool_avg1d)
+
+            # max pooling layer
+            elif layer_type == 'pool-max1d':
+                pool_max1d = keras.layers.MaxPooling1D(
+                    pool_size=int(layer_params['kernel-size'][0]),
+                    strides=int(layer_params['stride'][0]),
+                    padding=layer_params['padding'][0],
+                )
+                layers.append(pool_max1d)
+            
+            else:
+                raise ValueError(f'Uknown layer type: {layer_type}')
 
             # END ADD NEW LAYERS
+        
+        print(layers)
 
         # Connection between layers
         for layer in keras_layers:
             layer[1]['input'] = list(map(int, layer[1]['input']))
+
+        print(keras_layers)
+        for layer in keras_layers:
+            print(layer)
 
         first_fc = True
         data_layers = []
@@ -306,12 +334,15 @@ class Evaluator:
 
         for layer_idx, layer in enumerate(layers):
             try:
+                # if the layer connects back to only one layer
                 if len(keras_layers[layer_idx][1]['input']) == 1:
+                    # if the only layer it connects back it's the INPUT
                     if keras_layers[layer_idx][1]['input'][0] == -1:
                         data_layers.append(layer(inputs))
                     else:
                         if keras_layers[layer_idx][0] == 'fc' and first_fc:
                             first_fc = False
+                            print(f'First FC layer Input {data_layers[keras_layers[layer_idx][1]["input"][0]]}')
                             flatten = keras.layers.Flatten()(
                                 data_layers[keras_layers[layer_idx][1]['input'][0]])
                             data_layers.append(layer(flatten))
@@ -423,7 +454,7 @@ class Evaluator:
 
     def evaluate(self, phenotype, load_prev_weights, weights_save_path,
                  parent_weights_path, train_time, num_epochs,
-                 input_size=(32, 32, 3)):
+                 input_size):
         """
             Evaluates the keras model using the keras optimiser
 
@@ -464,6 +495,10 @@ class Evaluator:
         learning_phenotype = 'learning:'+learning_phenotype.rstrip().lstrip()
         model_phenotype = model_phenotype.rstrip().lstrip().replace('  ', ' ')
 
+        print(model_phenotype)
+        print(learning_phenotype)
+
+
         keras_layers = self.get_layers(model_phenotype)
         keras_learning = self.get_learning(learning_phenotype)
         batch_size = int(keras_learning['batch_size'])
@@ -475,8 +510,11 @@ class Evaluator:
             if load_prev_weights:
                 num_epochs = 0
 
+            print('Assembling Network')
             model = self.assemble_network(keras_layers, input_size)
+            print('Network Assembled')
             opt = self.assemble_optimiser(keras_learning)
+            print('Optimizer Assembled')
 
             model.compile(optimizer=opt,
                           loss='categorical_crossentropy',
@@ -499,6 +537,7 @@ class Evaluator:
 
         trainable_count = model.count_params()
 
+        print('Just before FITTING')
         score = model.fit(
             x=self.dataset['evo_x_train'],
             y=self.dataset['evo_y_train'],
@@ -551,5 +590,5 @@ class Evaluator:
         model = keras.models.load_model(model_path)
         y_pred = model.predict(self.dataset['x_test'])
 
-        accuracy = self.fitness_metric(self.dataset['y_test'], y_pred)
-        return accuracy
+        metric = self.fitness_metric(self.dataset['y_test'], y_pred)
+        return metric

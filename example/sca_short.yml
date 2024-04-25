@@ -1,15 +1,15 @@
 evolutionary:
   # Maximum number of generations
-  num_generations: 10
+  num_generations: 150
 
   # lambda, i.e., number of offspring
   lambda: 4
 
   # maximum of epochs to perform. Evolution is halted when the current number of epochs surpasses this value
-  max_epochs: 100
+  max_epochs: 1000
 
-  # maximum training time for each network (in seconds)
-  default_train_time: 10
+  # maximum training time for each network (in seconds) - 2min for this SHORT config
+  default_train_time: 20
 
   # fitness assignment metric
   fitness_metric: accuracy
@@ -57,4 +57,4 @@ setup:
     800, 900, 1000, 1100, 1200, 1300, 1400]
   
   # place where the experiment is saved
-  save_path: ./experiments/cpu/
+  save_path: ./experiments/

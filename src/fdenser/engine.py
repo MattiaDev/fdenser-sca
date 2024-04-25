@@ -379,7 +379,7 @@ def mutation(individual, grammar, add_layer, re_use_layer, remove_layer,
     return ind
 
 
-def main(run, dataset, config, grammar):
+def main(run, dataset, input_shape, config, grammar):
     """
         (1+lambda)-ES
 
@@ -450,6 +450,7 @@ def main(run, dataset, config, grammar):
                 Individual(
                     config["network"]["network_structure"],
                     config["network"]["macro_structure"],
+                    input_shape,
                     config["network"]["output"],
                     _id_,
                 ).initialise(
@@ -460,6 +461,7 @@ def main(run, dataset, config, grammar):
                 )
                 for _id_ in range(config["evolutionary"]["lambda"])
             ]
+            print('Population Initialized!')
 
             # set initial population variables and evaluate population
             population_fits = []
@@ -475,6 +477,7 @@ def main(run, dataset, config, grammar):
                     )
                 )
                 ind.id = idx
+            print('Initial Population Evaluated!')
 
         else:
             print('[%d] Performing generation: %d' % (run, gen))
@@ -518,9 +521,11 @@ def main(run, dataset, config, grammar):
                 ind.id = idx
 
         # select parent
+        print('Selecting Fittest')
         parent = select_fittest(
             population, population_fits, grammar, cnn_eval, gen, run_path,
             config["evolutionary"]["default_train_time"])
+        print('Fittest selected')
 
         # remove temporary files to free disk space
         if gen > 1:
