@@ -15,7 +15,6 @@
 
 from .datasets.svhn import load_svhn
 from .datasets.cifar import load_cifar
-from .datasets.tiny_imagenet import load_tiny_imagenet
 from sklearn.model_selection import train_test_split
 import keras
 from multiprocessing import Pool
@@ -197,6 +196,8 @@ def load_dataset(dataset, shape=(32, 32)):
         n_classes = 20
 
     elif dataset == 'tiny-imagenet':
+        from .datasets.tiny_imagenet import load_tiny_imagenet
+
         x_train, y_train, x_test, y_test = \
             load_tiny_imagenet(TINY_IMAGENET, shape)
         n_classes = 200

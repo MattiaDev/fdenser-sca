@@ -8,7 +8,7 @@ import h5py
 import numpy as np
 
 
-def prepare_data(x_train, y_train, x_test, y_test, n_classes):
+def prepare_data(x_train, y_train, x_test, y_test):
     """
         Split the data into independent sets
 
@@ -50,8 +50,8 @@ def prepare_data(x_train, y_train, x_test, y_test, n_classes):
     evo_x_train, evo_x_test, evo_y_train, evo_y_test = train_test_split(
         x_train, y_train, test_size=test_size, stratify=y_train)
 
-    evo_y_train = keras.utils.to_categorical(evo_y_train, n_classes)
-    evo_y_val = keras.utils.to_categorical(evo_y_val, n_classes)
+    evo_y_train = keras.utils.to_categorical(evo_y_train)
+    evo_y_val = keras.utils.to_categorical(evo_y_val)
 
     dataset = {
         'evo_x_train': evo_x_train, 'evo_y_train': evo_y_train,
@@ -97,8 +97,8 @@ def load_dataset(dataset):
         f = h5py.File('ASCAD.h5', 'r')
 
         profiling_traces = np.array(f['Profiling_traces']['traces'])[..., np.newaxis]
-        profiling_labels = f['Profiling_traces']['labels']
-        profiling_labels = keras.utils.to_categorical(profiling_labels)
+        profiling_labels = np.array(f['Profiling_traces']['labels'])
+        # profiling_labels = keras.utils.to_categorical(profiling_labels)
 
         print(type(profiling_traces))
         print(type(profiling_labels))
@@ -106,8 +106,8 @@ def load_dataset(dataset):
         print(profiling_labels.shape)
         
         attack_traces = np.array(f['Attack_traces']['traces'])[..., np.newaxis]
-        attack_labels = f['Attack_traces']['labels']
-        attack_labels = keras.utils.to_categorical(attack_labels)
+        attack_labels = np.array(f['Attack_traces']['labels'])
+        # attack_labels = keras.utils.to_categorical(attack_labels)
 
         print(type(attack_traces))
         print(type(attack_labels))
@@ -118,12 +118,10 @@ def load_dataset(dataset):
         y_train = profiling_labels
         x_test = attack_traces
         y_test = attack_labels
-
-        n_classes = 255
     else:
         print('Error: the dataset is not valid')
         sys.exit(-1)
 
-    dataset, input_shape = prepare_data(x_train, y_train, x_test, y_test, n_classes)
+    dataset, input_shape = prepare_data(x_train, y_train, x_test, y_test)
 
     return dataset, input_shape

@@ -96,8 +96,8 @@ def select_fittest(population, population_fits, grammar, cnn_eval, gen,
             elite.evaluate(
                 grammar,
                 cnn_eval,
-                '%s/best_%d_%d.hdf5' % (run_path, gen, elite.id),
-                '%s/best_%d_%d.hdf5' % (run_path, gen, elite.id),
+                '%s/best_%d_%d.keras' % (run_path, gen, elite.id),
+                '%s/best_%d_%d.keras' % (run_path, gen, elite.id),
             )
             population_fits[0] = elite.fitness
 
@@ -122,8 +122,8 @@ def select_fittest(population, population_fits, grammar, cnn_eval, gen,
                 parent_10min.evaluate(
                     grammar,
                     cnn_eval,
-                    '%s/best_%d_%d.hdf5' % (run_path, gen, parent_10min.id),
-                    '%s/best_%d_%d.hdf5' % (run_path, gen, parent_10min.id),
+                    '%s/best_%d_%d.keras' % (run_path, gen, parent_10min.id),
+                    '%s/best_%d_%d.keras' % (run_path, gen, parent_10min.id),
                 )
 
                 population_fits[population.index(parent_10min)] = parent_10min.fitness
@@ -473,7 +473,7 @@ def main(run, dataset, input_shape, config, grammar):
                     ind.evaluate(
                         grammar,
                         cnn_eval,
-                        f'{run_path}/best_{gen}_{idx}.hdf5',
+                        f'{run_path}/best_{gen}_{idx}.keras',
                     )
                 )
                 ind.id = idx
@@ -514,8 +514,8 @@ def main(run, dataset, input_shape, config, grammar):
                     ind.evaluate(
                         grammar,
                         cnn_eval,
-                        f'{run_path}/best_{gen}_{idx}.hdf5',
-                        f'{run_path}/best_{gen-1}_{parent_id}.hdf5',
+                        f'{run_path}/best_{gen}_{idx}.keras',
+                        f'{run_path}/best_{gen-1}_{parent_id}.keras',
                     )
                 )
                 ind.id = idx
@@ -530,17 +530,17 @@ def main(run, dataset, input_shape, config, grammar):
         # remove temporary files to free disk space
         if gen > 1:
             for x in range(len(population)):
-                if os.path.isfile(Path(run_path, f'best_{gen-2}_{x}.hdf5')):
-                    os.remove(Path(run_path, f'best_{gen-2}_{x}.hdf5'))
+                if os.path.isfile(Path(run_path, f'best_{gen-2}_{x}.keras')):
+                    os.remove(Path(run_path, f'best_{gen-2}_{x}.keras'))
 
         # update best individual
         if best_fitness is None or parent.fitness > best_fitness:
             best_fitness = parent.fitness
 
-            if os.path.isfile(Path(run_path, f'best_{gen}_{parent.id}.hdf5')):
+            if os.path.isfile(Path(run_path, f'best_{gen}_{parent.id}.keras')):
                 copyfile(
-                    Path(run_path, f'best_{gen}_{parent.id}.hdf5'),
-                    Path(run_path, 'best.hdf5'),
+                    Path(run_path, f'best_{gen}_{parent.id}.keras'),
+                    Path(run_path, 'best.keras'),
                 )
 
             with open(Path(run_path, 'best_parent.pkl'), 'wb') as handle:
@@ -558,5 +558,5 @@ def main(run, dataset, input_shape, config, grammar):
 
     # compute testing performance of the fittest network
     best_test_acc = cnn_eval.testing_performance(
-        str(Path(run_path, 'best.hdf5')))
+        str(Path(run_path, 'best.keras')))
     print('[%d] Best test accuracy: %f' % (run, best_test_acc))

@@ -6,10 +6,9 @@ build-backend = "setuptools.build_meta"
 name = "fdenser-sca"
 version = "0.0.1"
 dependencies = [
-  "keras==2.13.1",
   "numpy",
   "scikit-learn",
-  "tensorflow==2.13.1",
+  "tensorflow",
   "pyyaml",
 ]
 requires-python = ">=3.8"
