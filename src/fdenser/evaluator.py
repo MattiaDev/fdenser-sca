@@ -25,7 +25,7 @@ from .timed_stopping import TimedStopping
 #     [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=50)],
 # )
 
-DEBUG = True
+DEBUG = False
 
 
 class Evaluator:
@@ -180,7 +180,6 @@ class Evaluator:
 
         # input layer
         inputs = keras.layers.Input(shape=input_size)
-        print(f'Input Size: {input_size}')
 
         # Create layers -- ADD NEW LAYERS HERE
         layers = []
@@ -317,16 +316,10 @@ class Evaluator:
                 raise ValueError(f'Uknown layer type: {layer_type}')
 
             # END ADD NEW LAYERS
-        
-        print(layers)
 
         # Connection between layers
         for layer in keras_layers:
             layer[1]['input'] = list(map(int, layer[1]['input']))
-
-        print(keras_layers)
-        for layer in keras_layers:
-            print(layer)
 
         first_fc = True
         data_layers = []
@@ -495,10 +488,6 @@ class Evaluator:
         learning_phenotype = 'learning:'+learning_phenotype.rstrip().lstrip()
         model_phenotype = model_phenotype.rstrip().lstrip().replace('  ', ' ')
 
-        print(model_phenotype)
-        print(learning_phenotype)
-
-
         keras_layers = self.get_layers(model_phenotype)
         keras_learning = self.get_learning(learning_phenotype)
         batch_size = int(keras_learning['batch_size'])
@@ -510,11 +499,8 @@ class Evaluator:
             if load_prev_weights:
                 num_epochs = 0
 
-            print('Assembling Network')
             model = self.assemble_network(keras_layers, input_size)
-            print('Network Assembled')
             opt = self.assemble_optimiser(keras_learning)
-            print('Optimizer Assembled')
 
             model.compile(optimizer=opt,
                           loss='categorical_crossentropy',
@@ -537,7 +523,6 @@ class Evaluator:
 
         trainable_count = model.count_params()
 
-        print('Just before FITTING')
         score = model.fit(
             x=self.dataset['evo_x_train'],
             y=self.dataset['evo_y_train'],

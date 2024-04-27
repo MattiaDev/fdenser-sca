@@ -220,9 +220,7 @@ class Individual:
                 quality of the candidate solutions
         """
 
-        print('Evaluating Individual')
         phenotype = self.decode(grammar)
-        print('Phenotype decoded')
         start = time()
 
         load_prev_weights = True
@@ -270,6 +268,8 @@ class Individual:
             self.metrics = metrics
             if 'accuracy_test' in metrics:
                 if type(self.metrics['accuracy_test']) is float:
+                    self.fitness = self.metrics['accuracy_test']
+                elif type(self.metrics['accuracy_test']) is int:
                     self.fitness = self.metrics['accuracy_test']
                 else:
                     self.fitness = self.metrics['accuracy_test'].item()
@@ -326,8 +326,6 @@ def tf_evaluate(args):
         score_history : dict
             training data: loss and accuracy
     """
-
-    print('TF Evaluation', flush=True)
 
     import tensorflow as tf
 

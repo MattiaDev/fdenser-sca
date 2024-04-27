@@ -8,7 +8,7 @@
 <fully-connected> ::= layer:fc <activation-function> [num-units,int,1,128,9128] <bias> 
 <activation-function> ::= act:linear | act:relu | act:sigmoid
 <bias> ::= bias:True | bias:False
-<output> ::= layer:fc act:linear num-units:256 bias:True
+<output> ::= layer:fc act:softmax num-units:256 bias:True
 <learning> ::= <gradient-descent> <early-stop> [batch_size,int,1,100,500] epochs:10000 | <rmsprop> <early-stop> [batch_size,int,1,100,500] epochs:10000 | <adam> <early-stop> [batch_size,int,1,100,500] epochs:10000
 <gradient-descent> ::= learning:gradient-descent [lr,float,1,0.0001,0.1] [momentum,float,1,0.68,0.99] [decay,float,1,0.000001,0.001] <nesterov>
 <nesterov> ::= nesterov:True | nesterov:False

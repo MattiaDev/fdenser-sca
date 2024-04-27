@@ -8,8 +8,9 @@ version = "0.0.1"
 dependencies = [
   "numpy",
   "scikit-learn",
-  "tensorflow",
+  "tensorflow >= 2.14.0, < 2.15.0",
   "pyyaml",
+  "h5py",
 ]
 requires-python = ">=3.8"
 authors = [

@@ -98,7 +98,6 @@ def load_dataset(dataset):
 
         profiling_traces = np.array(f['Profiling_traces']['traces'])[..., np.newaxis]
         profiling_labels = np.array(f['Profiling_traces']['labels'])
-        # profiling_labels = keras.utils.to_categorical(profiling_labels)
 
         print(type(profiling_traces))
         print(type(profiling_labels))
@@ -107,7 +106,6 @@ def load_dataset(dataset):
         
         attack_traces = np.array(f['Attack_traces']['traces'])[..., np.newaxis]
         attack_labels = np.array(f['Attack_traces']['labels'])
-        # attack_labels = keras.utils.to_categorical(attack_labels)
 
         print(type(attack_traces))
         print(type(attack_labels))

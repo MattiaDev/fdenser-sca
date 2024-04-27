@@ -11,6 +11,7 @@ import yaml
 from .img import fitness_metrics
 from .img.data import load_dataset as img_load_dataset
 from .sca.data import load_dataset as sca_load_dataset
+from .sca.metrics import rank
 
 
 def save_pop(population, run_path, gen):
@@ -258,6 +259,8 @@ def load_config(config_file):
         config['evolutionary']['fitness_function'] = fitness_metrics.accuracy
     elif config['evolutionary']['fitness_metric'] == 'mse':
         config['evolutionary']['fitness_function'] = fitness_metrics.mse
+    elif config['evolutionary']['fitness_metric'] == 'rank':
+        config['evolutionary']['fitness_function'] = rank
     else:
         raise ValueError(
             'Invalid fitness metric in config file: '
