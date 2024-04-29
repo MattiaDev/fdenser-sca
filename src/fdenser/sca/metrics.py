@@ -1,6 +1,10 @@
+import logging
 import sys
 import h5py
 import numpy as np
+
+
+logger = logging.getLogger(__name__)
 
 
 # The AES SBox that we will use to compute the rank
@@ -51,6 +55,13 @@ def rank(true_y, predictions, target_byte=2):
     # We do this by sorting our estimates and find the rank in the sorted array.
     sorted_proba = np.array(list(map(lambda a : key_bytes_proba[a], key_bytes_proba.argsort()[::-1])))
     real_key = metadata[0]['key'][target_byte]
-    real_key_rank = np.where(sorted_proba == key_bytes_proba[real_key])[0][0]
-    # engine will try to maximize the fitness so we invert the values
-    return 255 - int(real_key_rank)
+    try:
+        real_key_rank = np.where(sorted_proba == key_bytes_proba[real_key])[0][0]
+        # engine will try to maximize the fitness so we invert the values
+        return 255 - int(real_key_rank)
+    except IndexError:
+        # probably the model output predictions with NaN values thus failing to
+        # compute the rank. This model should be discarded (thus the None
+        # return value)
+        logger.warning('The model generated failed to produce a valid rank metric')
+        return None

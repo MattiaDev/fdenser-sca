@@ -1,4 +1,5 @@
 import contextlib
+import logging
 from multiprocessing import Pool
 from time import time
 
@@ -6,6 +7,9 @@ import keras
 import numpy as np
 
 from .module import Module
+
+
+logger = logging.getLogger(__name__)
 
 
 class Individual:
@@ -231,7 +235,7 @@ class Individual:
 
         num_pool_workers = 1
         with contextlib.closing(Pool(num_pool_workers)) as po:
-            print('Pool reached')
+            logger.debug(f'Pool reached for individual {self.id}')
             pool_results = po.map_async(
                 tf_evaluate,
                 [(cnn_eval, phenotype, load_prev_weights,
@@ -239,9 +243,6 @@ class Individual:
                   train_time, self.num_epochs, self.input_shape)]
             )
             metrics = pool_results.get()[0]
-        # metrics = tf_evaluate([cnn_eval, phenotype, load_prev_weights,
-        #     weights_save_path, parent_weights_path, train_time, self.num_epochs, self.input_shape])
-        # print(metrics)
 
         if metrics is not None:
             if 'val_accuracy' in metrics:
@@ -267,7 +268,10 @@ class Individual:
                     ]
             self.metrics = metrics
             if 'accuracy_test' in metrics:
-                if type(self.metrics['accuracy_test']) is float:
+                if self.metrics['accuracy_test'] is None:
+                    self.fitness = -1
+                    logger.warning(f'Failed to evaluate individual {self.id}')
+                elif type(self.metrics['accuracy_test']) is float:
                     self.fitness = self.metrics['accuracy_test']
                 elif type(self.metrics['accuracy_test']) is int:
                     self.fitness = self.metrics['accuracy_test']
@@ -280,6 +284,7 @@ class Individual:
             self.trainable_parameters = self.metrics['trainable_parameters']
             self.current_time += (self.train_time-self.current_time)
         else:
+            logger.warning(f'Failed to train individual {self.id}')
             self.metrics = None
             self.fitness = -1
             self.num_epochs = 0
@@ -288,6 +293,7 @@ class Individual:
 
         self.time = time() - start
 
+        logger.info(f'Fitness of {self.id}: {self.fitness}')
         return self.fitness
 
 
@@ -333,7 +339,7 @@ def tf_evaluate(args):
         gpus = tf.config.experimental.list_physical_devices('GPU')
         tf.config.experimental.set_memory_growth(gpus[0], True)
     except IndexError:
-        print('RUNNING ON CPU ONLY!', flush=True)
+        logger.debug('Evaluation will run on CPU')
 
     cnn_eval, phenotype, load_prev_weights, weights_save_path, \
         parent_weights_path, train_time, num_epochs, input_shape = args
@@ -349,10 +355,10 @@ def tf_evaluate(args):
             input_shape,
         )
     except tf.errors.ResourceExhaustedError:
-        print('Memory Error', flush=True)
+        logger.warning('Memory Error: ResourceExhaustedError')
         keras.backend.clear_session()
         return None
     except TypeError:
-        print('Memory Error', flush=True)
+        logger.warning('Memory Error: TypeError')
         keras.backend.clear_session()
         return None

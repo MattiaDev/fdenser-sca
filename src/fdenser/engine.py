@@ -13,7 +13,9 @@
 # limitations under the License.
 
 
+import logging
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import pickle
 import random
 from copy import deepcopy
@@ -25,6 +27,7 @@ import numpy as np
 
 from .evaluator import Evaluator
 from .execution import (
+    configure_logging,
     pickle_evaluator,
     pickle_population,
     save_pop,
@@ -32,10 +35,8 @@ from .execution import (
 )
 from .individual import Individual
 
-# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-import logging
-import tensorflow as tf
-tf.get_logger().setLevel(logging.WARNING)
+
+logger = logging.getLogger(__name__)
 
 
 def select_fittest(population, population_fits, grammar, cnn_eval, gen,
@@ -437,6 +438,9 @@ def main(run, dataset, input_shape, config, grammar):
         random.setstate(pkl_random)
         np.random.set_state(pkl_numpy)
 
+    log_path = run_path / Path('fdenser.log')
+    configure_logging(log_path)
+
     for gen in range(last_gen+1, config["evolutionary"]["num_generations"]):
 
         # check the total number of epochs (stop criteria)
@@ -445,8 +449,8 @@ def main(run, dataset, input_shape, config, grammar):
             break
 
         if gen == 0:
-            print('[%d] Creating the initial population' % (run))
-            print('[%d] Performing generation: %d' % (run, gen))
+            logger.info('[%d] Creating the initial population' % (run))
+            logger.info('[%d] Performing generation: %d' % (run, gen))
 
             # create initial population
             population = [
@@ -464,7 +468,7 @@ def main(run, dataset, input_shape, config, grammar):
                 )
                 for _id_ in range(config["evolutionary"]["lambda"])
             ]
-            print('Population Initialized!')
+            logger.info('Population Initialized!')
 
             # set initial population variables and evaluate population
             population_fits = []
@@ -480,10 +484,10 @@ def main(run, dataset, input_shape, config, grammar):
                     )
                 )
                 ind.id = idx
-            print('Initial Population Evaluated!')
+            logger.info('Initial Population Evaluated!')
 
         else:
-            print('[%d] Performing generation: %d' % (run, gen))
+            logger.info('[%d] Performing generation: %d' % (run, gen))
 
             # generate offspring (by mutation)
             offspring = [
@@ -523,12 +527,10 @@ def main(run, dataset, input_shape, config, grammar):
                 )
                 ind.id = idx
 
-        # select parent
-        print('Selecting Fittest')
         parent = select_fittest(
             population, population_fits, grammar, cnn_eval, gen, run_path,
             config["evolutionary"]["default_train_time"])
-        print('Fittest selected')
+        logger.debug(f'Fittest individual is {parent.id}')
 
         # remove temporary files to free disk space
         if gen > 1:
@@ -549,17 +551,18 @@ def main(run, dataset, input_shape, config, grammar):
             with open(Path(run_path, 'best_parent.pkl'), 'wb') as handle:
                 pickle.dump(parent, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-        print(f'[{run}] Best fitness of generation {gen}: '
+        logger.info(f'[{run}] Best fitness of generation {gen}: '
               f'{max(population_fits)}')
-        print(f'[{run}] Best overall fitness: {best_fitness}')
+        logger.info(f'[{run}] Best overall fitness: {best_fitness}')
 
         # save population
         save_pop(population, run_path, gen)
         pickle_population(population, parent, run_path)
 
         total_epochs += sum([ind.num_epochs for ind in population])
+        log.debug(f'Total epochs: {total_epochs}')
 
     # compute testing performance of the fittest network
     best_test_acc = cnn_eval.testing_performance(
         str(Path(run_path, 'best.h5')))
-    print('[%d] Best test accuracy: %f' % (run, best_test_acc))
+    logger.info('[%d] Best test accuracy: %f' % (run, best_test_acc))
