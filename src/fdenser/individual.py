@@ -333,6 +333,7 @@ def tf_evaluate(args):
             training data: loss and accuracy
     """
 
+    import traceback
     import tensorflow as tf
 
     try:
@@ -360,5 +361,6 @@ def tf_evaluate(args):
         return None
     except TypeError:
         logger.warning('Memory Error: TypeError')
+        logger.debug(traceback.format_exc())
         keras.backend.clear_session()
         return None

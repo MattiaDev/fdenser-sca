@@ -1,4 +1,5 @@
 import logging
+import random
 import sys
 import h5py
 import numpy as np
@@ -27,41 +28,77 @@ AES_Sbox = np.array([
         0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16
         ])
 
-# Compute the rank of the real key for a give set of predictions
-def rank(true_y, predictions, target_byte=2):
-    key_bytes_proba = np.zeros(256)
 
-    f = h5py.File('ASCAD.h5', 'r')
-    metadata = f['Attack_traces/metadata']
+def key_probabilities(predictions, metadata, target_byte=2):
+    key_probs = np.zeros(256)
 
-    for p in range(len(predictions)):
-        # Go back from the class to the key byte. '2' is the index of the byte (third byte) of interest.
-        plaintext = metadata[p]['plaintext'][target_byte]
-        for i in range(0, 256):
-            # Our candidate key byte probability is the sum of the predictions logs
-            proba = predictions[p][AES_Sbox[plaintext ^ i]]
-            if proba != 0:
-                key_bytes_proba[i] += np.log(proba)
+    for p, m in zip(predictions, metadata):
+        plaintext = m['plaintext'][target_byte]
+        for key in range(256):
+            sbox_value = AES_Sbox[plaintext ^ key]
+            # the probability of the key is associated to the
+            # output of the sbox computation
+            key_probability = p[sbox_value]
+            if key_probability > 0:
+                key_probs[key] += np.log(key_probability)
             else:
-                # We do not want an -inf here, put a very small epsilon
-                # that correspondis to a power of our min non zero proba
-                min_proba_predictions = predictions[p][np.array(predictions[p]) != 0]
-                if len(min_proba_predictions) == 0:
-                    print("Error: got a prediction with only zeroes ... this should not happen!")
-                    sys.exit(-1)
-                min_proba = min(min_proba_predictions)
-                key_bytes_proba[i] += np.log(min_proba**2)
-    # Now we find where our real key candidate lies in the estimation.
-    # We do this by sorting our estimates and find the rank in the sorted array.
-    sorted_proba = np.array(list(map(lambda a : key_bytes_proba[a], key_bytes_proba.argsort()[::-1])))
-    real_key = metadata[0]['key'][target_byte]
-    try:
-        real_key_rank = np.where(sorted_proba == key_bytes_proba[real_key])[0][0]
-        # engine will try to maximize the fitness so we invert the values
-        return 255 - int(real_key_rank)
-    except IndexError:
-        # probably the model output predictions with NaN values thus failing to
-        # compute the rank. This model should be discarded (thus the None
-        # return value)
-        logger.warning('The model generated failed to produce a valid rank metric')
-        return None
+                #print('Error: we got a negative probability')
+                nonzero_predictions = p[np.where(p != 0)]
+                if len(nonzero_predictions) == 0:
+                    raise ValueError
+                min_probability = min(nonzero_predictions)
+                key_probs[key] += np.log(min_probability ** 2)
+    return key_probs
+
+
+def key_guessing_vector(probabilities):
+    sorted_keys = np.argsort(probabilities)[::-1]
+    return sorted_keys
+
+
+def rank_from_key_guessing_vector(key_guessing_vector, correct_key):
+    correct_key_position = np.where(key_guessing_vector == correct_key)[0][0]
+    return correct_key_position
+
+def rank(predictions, metadata, correct_key):
+    kps = key_probabilities(predictions, metadata)
+    kgv = key_guessing_vector(kps)
+    r = rank_from_key_guessing_vector(kgv, correct_key)
+    return r
+
+def simple_guessing_entropy(predictions, metadata, correct_key, alpha=100):
+    subset_size = len(predictions) // alpha
+    ranks = []
+    for i in range(0, len(predictions), subset_size):
+        predictions_subset = predictions[i:i+subset_size]
+        metadata_subset = metadata[i:i+subset_size]
+        r = rank(predictions_subset, metadata_subset, correct_key)
+        ranks.append(r)
+    avg_rank = sum(ranks) / alpha
+    return avg_rank
+
+def generalized_guessing_entropy(predictions, metadata, correct_key, r=0.99):
+    random.seed(42)
+    subset_size = int(len(predictions) * r)
+    to_shuffle = list(zip(predictions, metadata))
+    random.shuffle(to_shuffle)
+    predictions_shuffled, metadata_shuffled = zip(*to_shuffle)
+    ranks = []
+    for i in range(0, len(predictions_shuffled), subset_size):
+        predictions_subset = predictions_shuffled[i:i+subset_size]
+        metadata_subset = metadata_shuffled[i:i+subset_size]
+        r = rank(predictions_subset, metadata_subset, correct_key)
+        ranks.append(r)
+    avg_rank = sum(ranks) / len(ranks)
+    # Rank is inverted because engine tries to maximize
+    return avg_rank
+
+
+f = h5py.File('ASCAD.h5', 'r')
+metadata = f['Attack_traces/metadata']
+target_byte = 2
+correct_key = metadata[0]['key'][target_byte]
+
+def gge(yp, p):
+    return generalized_guessing_entropy(p, metadata, correct_key)
+

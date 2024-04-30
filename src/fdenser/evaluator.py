@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
+import os
 
 import keras
 from keras.callbacks import ModelCheckpoint
-import os
 
 from .timed_stopping import TimedStopping
 
@@ -26,6 +27,7 @@ from .timed_stopping import TimedStopping
 # )
 
 DEBUG = False
+logger = logging.getLogger(__name__)
 
 
 class Evaluator:
@@ -523,6 +525,7 @@ class Evaluator:
 
         trainable_count = model.count_params()
 
+        logger.debug('Starting model training')
         score = model.fit(
             x=self.dataset['evo_x_train'],
             y=self.dataset['evo_y_train'],
@@ -543,8 +546,10 @@ class Evaluator:
         y_pred_test = model.predict(
             self.dataset['evo_x_test'], batch_size=batch_size, verbose=0)
 
+        logger.debug('Starting model fitness computation')
         accuracy_test = self.fitness_metric(
             self.dataset['evo_y_test'], y_pred_test)
+        logger.debug(f'Fitness score: {accuracy_test}')
 
         if DEBUG:
             print(phenotype, accuracy_test)

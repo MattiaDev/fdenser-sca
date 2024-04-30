@@ -60,9 +60,6 @@ def prepare_data(x_train, y_train, x_test, y_test):
         'x_test': x_test, 'y_test': y_test
     }
 
-    print('DS Shape', evo_x_train.shape)
-    print('Item Shape', evo_x_train[0].shape)
-
     return dataset, evo_x_train[0].shape
 
 
@@ -99,18 +96,8 @@ def load_dataset(dataset):
         profiling_traces = np.array(f['Profiling_traces']['traces'])[..., np.newaxis]
         profiling_labels = np.array(f['Profiling_traces']['labels'])
 
-        print(type(profiling_traces))
-        print(type(profiling_labels))
-        print(profiling_traces.shape)
-        print(profiling_labels.shape)
-        
         attack_traces = np.array(f['Attack_traces']['traces'])[..., np.newaxis]
         attack_labels = np.array(f['Attack_traces']['labels'])
-
-        print(type(attack_traces))
-        print(type(attack_labels))
-        print(attack_traces.shape)
-        print(attack_labels.shape)
 
         x_train = profiling_traces
         y_train = profiling_labels

@@ -1,15 +1,15 @@
 evolutionary:
   # Maximum number of generations
-  num_generations: 10
+  num_generations: 100
 
   # lambda, i.e., number of offspring
   lambda: 4
 
   # maximum of epochs to perform. Evolution is halted when the current number of epochs surpasses this value
-  max_epochs: 500
+  max_epochs: 10000
 
   # maximum training time for each network (in seconds) - 2min for this SHORT config
-  default_train_time: 60
+  default_train_time: 100
 
   # fitness assignment metric
   fitness_metric: gge
@@ -20,7 +20,7 @@ evolutionary:
     add_layer: 0.25
     reuse_layer: 0.15
     remove_layer: 0.25
-    add_connection: 0
+    add_connection: 0.15
     remove_connection: 0
     dsge_layer: 0.15
     macro_layer: 0.3
@@ -30,8 +30,8 @@ evolutionary:
 network:
   # structure fo the hidden layers of the network [[non-terminal, min, max], ...]
   network_structure:
-    - [features, 1, 10]
-    - [classification, 1, 5]
+    - [features, 1, 30]
+    - [classification, 1, 10]
 
   # output layer
   output: output
@@ -58,4 +58,4 @@ setup:
     800, 900, 1000, 1100, 1200, 1300, 1400]
   
   # place where the experiment is saved
-  save_path: ./experiments/sca/short/
+  save_path: ./experiments/sca/long/

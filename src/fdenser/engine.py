@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 def select_fittest(population, population_fits, grammar, cnn_eval, gen,
-                   run_path, default_train_time):
+                   run_path, default_train_time, minimize=False):
     """
         Select the parent to seed the next generation.
 
@@ -84,7 +84,10 @@ def select_fittest(population, population_fits, grammar, cnn_eval, gen,
     """
 
     # Get best individual just according to fitness
-    idx_max = np.argmax(population_fits)
+    if minimize:
+        idx_max = np.argmin(population_fits)
+    else:
+        idx_max = np.argmax(population_fits)
     parent = population[idx_max]
 
     # however if the parent is not the elite, and the parent is trained for
@@ -117,8 +120,12 @@ def select_fittest(population, population_fits, grammar, cnn_eval, gen,
             if sum(ids_10min) > 0:
                 retrain_10min = True
                 indvs_10min = np.array(population)[ids_10min]
-                max_fitness_10min = max([ind.fitness for ind in indvs_10min])
-                idx_max_10min = np.argmax(max_fitness_10min)
+                if minimize:
+                    max_fitness_10min = min([ind.fitness for ind in indvs_10min])
+                    idx_max_10min = np.argmin(max_fitness_10min)
+                else:
+                    max_fitness_10min = max([ind.fitness for ind in indvs_10min])
+                    idx_max_10min = np.argmax(max_fitness_10min)
                 parent_10min = indvs_10min[idx_max_10min]
 
                 parent_10min.train_time = parent.train_time
@@ -132,24 +139,33 @@ def select_fittest(population, population_fits, grammar, cnn_eval, gen,
 
                 population_fits[population.index(parent_10min)] = parent_10min.fitness
 
+        if minimize:
+            def is_better(fitness_a, fitness_b):
+                '''Fitness of A is better than fitness of B'''
+                return fitness_a < fitness_b
+        else:
+            def is_better(fitness_a, fitness_b):
+                '''Fitness of A is better than fitness of B'''
+                return fitness_a > fitness_b
+
         # select the fittest amont all retrains and the initial parent
         if retrain_elite:
             if retrain_10min:
-                if parent_10min.fitness > elite.fitness and \
-                        parent_10min.fitness > parent.fitness:
+                if is_better(parent_10min.fitness, elite.fitness) and \
+                   is_better(parent_10min.fitness, parent.fitness):
                     return deepcopy(parent_10min)
-                elif elite.fitness > parent_10min.fitness and \
-                        elite.fitness > parent.fitness:
+                elif is_better(elite.fitness, parent_10min.fitness) and \
+                        is_better(elite.fitness, parent.fitness):
                     return deepcopy(elite)
                 else:
                     return deepcopy(parent)
             else:
-                if elite.fitness > parent.fitness:
+                if is_better(elite.fitness, parent.fitness):
                     return deepcopy(elite)
                 else:
                     return deepcopy(parent)
         elif retrain_10min:
-            if parent_10min.fitness > parent.fitness:
+            if is_better(parent_10min.fitness, parent.fitness):
                 return deepcopy(parent_10min)
             else:
                 return deepcopy(parent)
@@ -529,7 +545,9 @@ def main(run, dataset, input_shape, config, grammar):
 
         parent = select_fittest(
             population, population_fits, grammar, cnn_eval, gen, run_path,
-            config["evolutionary"]["default_train_time"])
+            config["evolutionary"]["default_train_time"],
+            config["evolutionary"]["minimize"],
+	)
         logger.debug(f'Fittest individual is {parent.id}')
 
         # remove temporary files to free disk space
@@ -539,7 +557,16 @@ def main(run, dataset, input_shape, config, grammar):
                     os.remove(Path(run_path, f'best_{gen-2}_{x}.h5'))
 
         # update best individual
-        if best_fitness is None or parent.fitness > best_fitness:
+        if config['evolutionary']['minimize']:
+            def is_better(fitness_a, fitness_b):
+                '''Fitness of A is better than fitness of B'''
+                return fitness_a < fitness_b
+        else:
+            def is_better(fitness_a, fitness_b):
+                '''Fitness of A is better than fitness of B'''
+                return fitness_a > fitness_b
+
+        if best_fitness is None or is_better(parent.fitness, best_fitness):
             best_fitness = parent.fitness
 
             if os.path.isfile(Path(run_path, f'best_{gen}_{parent.id}.h5')):
@@ -551,8 +578,12 @@ def main(run, dataset, input_shape, config, grammar):
             with open(Path(run_path, 'best_parent.pkl'), 'wb') as handle:
                 pickle.dump(parent, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-        logger.info(f'[{run}] Best fitness of generation {gen}: '
-              f'{max(population_fits)}')
+        if config['evolutionary']['minimize']:
+            logger.info(f'[{run}] Best fitness of generation {gen}: '
+                f'{min(population_fits)}')
+        else:
+            logger.info(f'[{run}] Best fitness of generation {gen}: '
+                f'{max(population_fits)}')
         logger.info(f'[{run}] Best overall fitness: {best_fitness}')
 
         # save population
@@ -560,7 +591,7 @@ def main(run, dataset, input_shape, config, grammar):
         pickle_population(population, parent, run_path)
 
         total_epochs += sum([ind.num_epochs for ind in population])
-        log.debug(f'Total epochs: {total_epochs}')
+        logger.debug(f'Total epochs: {total_epochs}')
 
     # compute testing performance of the fittest network
     best_test_acc = cnn_eval.testing_performance(

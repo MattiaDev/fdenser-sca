@@ -6,13 +6,14 @@ import random
 from glob import glob
 from pathlib import Path
 
+import h5py
 import numpy as np
 import yaml
 
 from .img import fitness_metrics
 from .img.data import load_dataset as img_load_dataset
 from .sca.data import load_dataset as sca_load_dataset
-from .sca.metrics import rank
+from .sca.metrics import rank, gge
 
 
 def save_pop(population, run_path, gen):
@@ -262,6 +263,10 @@ def load_config(config_file):
         config['evolutionary']['fitness_function'] = fitness_metrics.mse
     elif config['evolutionary']['fitness_metric'] == 'rank':
         config['evolutionary']['fitness_function'] = rank
+        print('Rank metric')
+    elif config['evolutionary']['fitness_metric'] == 'gge':
+        config['evolutionary']['fitness_function'] = gge
+        print('GGE metric')
     else:
         raise ValueError(
             'Invalid fitness metric in config file: '
@@ -286,7 +291,7 @@ def configure_logging(log_path):
         format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
         datefmt='%m-%d %H:%M',
         filename=log_path,
-        filemode='w',
+        filemode='a',
     )
     # define a Handler which writes INFO messages or higher to the sys.stderr
     console = logging.StreamHandler()
