@@ -10,6 +10,7 @@ import h5py
 import numpy as np
 import yaml
 
+from .config import Config
 from .img import fitness_metrics
 from .img.data import load_dataset as img_load_dataset
 from .sca.data import load_dataset as sca_load_dataset
@@ -238,7 +239,7 @@ def unpickle_population(run_path):
         return None
 
 
-def load_config(config_file):
+def load_config(config_file, run):
     """
         Load yml configuration file.
 
@@ -273,7 +274,14 @@ def load_config(config_file):
             f'{config["evolutionary"]["fitness_metric"]}'
         )
 
-    return config
+    c = Config(config, run)
+    configure_logging(c.setup.log_path)
+
+    logger = logging.getLogger(__name__)
+    logger.debug('Config successfully imported')
+    logger.debug(c)
+
+    return c
 
 
 def load_dataset(dataset_name):

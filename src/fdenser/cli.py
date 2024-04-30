@@ -44,7 +44,7 @@ def fast_denser_cli():
     from .grammar import Grammar
 
     # load config file
-    config = load_config(args.config)
+    config = load_config(args.config, args.run)
 
     # load grammar
     grammar = Grammar(args.grammar)

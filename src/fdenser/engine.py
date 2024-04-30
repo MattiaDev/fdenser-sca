@@ -419,7 +419,7 @@ def main(run, dataset, input_shape, config, grammar):
             path to the grammar file
     """
 
-    run_path = Path(config["setup"]["save_path"], f'run_{run:02d}')
+    run_path = config.setup.run_path
 
     # best fitness so far
     best_fitness = None
@@ -429,16 +429,12 @@ def main(run, dataset, input_shape, config, grammar):
 
     # if there is not a previous population
     if unpickle is None:
-        # create directories
-        makedirs(run_path, exist_ok=True)
-
         # set random seeds
-        random.seed(config["setup"]["random_seeds"][run])
-        np.random.seed(config["setup"]["numpy_seeds"][run])
+        random.seed(config.setup.random_seeds[run])
+        np.random.seed(config.setup.numpy_seeds[run])
 
         # create evaluator
-        cnn_eval = Evaluator(
-            dataset, config["evolutionary"]["fitness_function"])
+        cnn_eval = Evaluator(dataset, config.evo.fitness)
 
         # save evaluator
         pickle_evaluator(cnn_eval, run_path)
@@ -454,14 +450,11 @@ def main(run, dataset, input_shape, config, grammar):
         random.setstate(pkl_random)
         np.random.set_state(pkl_numpy)
 
-    log_path = run_path / Path('fdenser.log')
-    configure_logging(log_path)
-
-    for gen in range(last_gen+1, config["evolutionary"]["num_generations"]):
+    for gen in range(last_gen+1, config.evo.max_generations):
 
         # check the total number of epochs (stop criteria)
         if total_epochs is not None and \
-           total_epochs >= config["evolutionary"]["max_epochs"]:
+           total_epochs >= config.evo.max_epochs:
             break
 
         if gen == 0:
@@ -471,18 +464,18 @@ def main(run, dataset, input_shape, config, grammar):
             # create initial population
             population = [
                 Individual(
-                    config["network"]["network_structure"],
-                    config["network"]["macro_structure"],
+                    config.network.structure,
+                    config.network.macro_structure,
                     input_shape,
-                    config["network"]["output"],
+                    config.network.output,
                     _id_,
                 ).initialise(
                     grammar,
-                    config["network"]["levels_back"],
-                    config["evolutionary"]["mutations"]["reuse_layer"],
-                    config["network"]["network_structure_init"],
+                    config.network.levels_back,
+                    config.evo.mutations["reuse_layer"],
+                    config.network.initial,
                 )
-                for _id_ in range(config["evolutionary"]["lambda"])
+                for _id_ in range(config.evo.es_lambda)
             ]
             logger.info('Population Initialized!')
 
@@ -491,7 +484,7 @@ def main(run, dataset, input_shape, config, grammar):
             for idx, ind in enumerate(population):
                 ind.current_time = 0
                 ind.num_epochs = 0
-                ind.train_time = config["evolutionary"]["default_train_time"]
+                ind.train_time = config.evo.default_train_time
                 population_fits.append(
                     ind.evaluate(
                         grammar,
@@ -510,17 +503,17 @@ def main(run, dataset, input_shape, config, grammar):
                 mutation(
                     parent,
                     grammar,
-                    config["evolutionary"]["mutations"]["add_layer"],
-                    config["evolutionary"]["mutations"]["reuse_layer"],
-                    config["evolutionary"]["mutations"]["remove_layer"],
-                    config["evolutionary"]["mutations"]["add_connection"],
-                    config["evolutionary"]["mutations"]["remove_connection"],
-                    config["evolutionary"]["mutations"]["dsge_layer"],
-                    config["evolutionary"]["mutations"]["macro_layer"],
-                    config["evolutionary"]["mutations"]["train_longer"],
-                    config["evolutionary"]["default_train_time"],
+                    config.evo.mutations["add_layer"],
+                    config.evo.mutations["reuse_layer"],
+                    config.evo.mutations["remove_layer"],
+                    config.evo.mutations["add_connection"],
+                    config.evo.mutations["remove_connection"],
+                    config.evo.mutations["dsge_layer"],
+                    config.evo.mutations["macro_layer"],
+                    config.evo.mutations["train_longer"],
+                    config.evo.default_train_time,
                 )
-                for _ in range(config["evolutionary"]["lambda"])
+                for _ in range(config.evo.es_lambda)
             ]
 
             population = [parent] + offspring
@@ -545,8 +538,8 @@ def main(run, dataset, input_shape, config, grammar):
 
         parent = select_fittest(
             population, population_fits, grammar, cnn_eval, gen, run_path,
-            config["evolutionary"]["default_train_time"],
-            config["evolutionary"]["minimize"],
+            config.evo.default_train_time,
+            config.evo.minimize,
 	)
         logger.debug(f'Fittest individual is {parent.id}')
 
@@ -557,7 +550,7 @@ def main(run, dataset, input_shape, config, grammar):
                     os.remove(Path(run_path, f'best_{gen-2}_{x}.h5'))
 
         # update best individual
-        if config['evolutionary']['minimize']:
+        if config.evo.minimize:
             def is_better(fitness_a, fitness_b):
                 '''Fitness of A is better than fitness of B'''
                 return fitness_a < fitness_b
@@ -578,7 +571,7 @@ def main(run, dataset, input_shape, config, grammar):
             with open(Path(run_path, 'best_parent.pkl'), 'wb') as handle:
                 pickle.dump(parent, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-        if config['evolutionary']['minimize']:
+        if config.evo.minimize:
             logger.info(f'[{run}] Best fitness of generation {gen}: '
                 f'{min(population_fits)}')
         else:
