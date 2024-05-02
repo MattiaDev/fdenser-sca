@@ -453,8 +453,11 @@ def main(run, dataset, input_shape, config, grammar):
     for gen in range(last_gen+1, config.evo.max_generations):
 
         # check the total number of epochs (stop criteria)
-        if total_epochs is not None and \
-           total_epochs >= config.evo.max_epochs:
+        # TODO: make fitness threshold settable in config and sign has to depend on min/max configuration
+        if (total_epochs is not None and \
+           total_epochs >= config.evo.max_epochs) or \
+           (best_fitness is not None and \
+           0 <= best_fitness <= 10):
             break
 
         if gen == 0:
@@ -587,6 +590,11 @@ def main(run, dataset, input_shape, config, grammar):
         logger.debug(f'Total epochs: {total_epochs}')
 
     # compute testing performance of the fittest network
+    # dataset need to be shuffled or whatever before loading so please choose
+    # seeds and other method to reach reproducibility there in the
+    # load_dataset method
+    # set random seeds cause the above may not be true
+    # no random seed, we split ascad in a reproducible way which should be enough
     best_test_acc = cnn_eval.testing_performance(
         str(Path(run_path, 'best.h5')))
-    logger.info('[%d] Best test accuracy: %f' % (run, best_test_acc))
+    logger.info('[%d] Best test fitness: %f' % (run, best_test_acc))

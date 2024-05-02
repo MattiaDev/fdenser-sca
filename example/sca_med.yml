@@ -1,15 +1,15 @@
 evolutionary:
   # Maximum number of generations
-  num_generations: 10
+  num_generations: 30
 
   # lambda, i.e., number of offspring
   lambda: 4
 
   # maximum of epochs to perform. Evolution is halted when the current number of epochs surpasses this value
-  max_epochs: 600
+  max_epochs: 6000
 
   # maximum training time for each network (in seconds) - 2min for this SHORT config
-  default_train_time: 60
+  default_train_time: 180
 
   # fitness assignment metric
   fitness_metric: gge
@@ -30,8 +30,8 @@ evolutionary:
 network:
   # structure fo the hidden layers of the network [[non-terminal, min, max], ...]
   network_structure:
-    - [features, 1, 10]
-    - [classification, 1, 5]
+    - [features, 1, 20]
+    - [classification, 1, 7]
 
   # output layer
   output: output
@@ -53,9 +53,13 @@ setup:
   # Seeds for setting the initial random and numpy seeds. Enable reproducibility.
   # Warning: the current seeds only enable performing runs from 0 to 14.
   random_seeds: [100, 200, 300, 400, 500, 600, 700,
-    800, 900, 1000, 1100, 1200, 1300, 1400]
+    800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600,
+    1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400,
+    2500, 2600, 2700, 2800, 2900]
   numpy_seeds: [100, 200, 300, 400, 500, 600, 700,
-    800, 900, 1000, 1100, 1200, 1300, 1400]
+    800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600,
+    1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400,
+    2500, 2600, 2700, 2800, 2900]
   
   # place where the experiment is saved
-  save_path: ./experiments/sca/short/
+  save_path: ./experiments/balanced-testset/

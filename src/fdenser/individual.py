@@ -235,7 +235,6 @@ class Individual:
 
         num_pool_workers = 1
         with contextlib.closing(Pool(num_pool_workers)) as po:
-            logger.debug(f'Pool reached for individual {self.id}')
             pool_results = po.map_async(
                 tf_evaluate,
                 [(cnn_eval, phenotype, load_prev_weights,

@@ -337,7 +337,7 @@ class Evaluator:
                     else:
                         if keras_layers[layer_idx][0] == 'fc' and first_fc:
                             first_fc = False
-                            print(f'First FC layer Input {data_layers[keras_layers[layer_idx][1]["input"][0]]}')
+                            logger.debug(f'First FC layer Input {data_layers[keras_layers[layer_idx][1]["input"][0]]}')
                             flatten = keras.layers.Flatten()(
                                 data_layers[keras_layers[layer_idx][1]['input'][0]])
                             data_layers.append(layer(flatten))
@@ -527,13 +527,13 @@ class Evaluator:
 
         logger.debug('Starting model training')
         score = model.fit(
-            x=self.dataset['evo_x_train'],
-            y=self.dataset['evo_y_train'],
+            x=self.dataset['train'].x,
+            y=self.dataset['train'].y,
             batch_size=batch_size,
             epochs=int(keras_learning['epochs']),
-            steps_per_epoch=(self.dataset['evo_x_train'].shape[0]//batch_size),
-            validation_data=(self.dataset['evo_x_val'],
-                             self.dataset['evo_y_val']),
+            steps_per_epoch=(self.dataset['train'].x.shape[0]//batch_size),
+            validation_data=(self.dataset['val'].x,
+                             self.dataset['val'].y),
             callbacks=[early_stop, time_stop, monitor],
             initial_epoch=num_epochs,
             verbose=DEBUG
@@ -543,12 +543,10 @@ class Evaluator:
         model.save(weights_save_path)
 
         # measure test performance
-        y_pred_test = model.predict(
-            self.dataset['evo_x_test'], batch_size=batch_size, verbose=0)
+        y_pred_test = model.predict(self.dataset['test'].x, verbose=0)
 
-        logger.debug('Starting model fitness computation')
         accuracy_test = self.fitness_metric(
-            self.dataset['evo_y_test'], y_pred_test)
+            y_pred_test, self.dataset['test'])
         logger.debug(f'Fitness score: {accuracy_test}')
 
         if DEBUG:
@@ -578,7 +576,7 @@ class Evaluator:
         """
 
         model = keras.models.load_model(model_path)
-        y_pred = model.predict(self.dataset['x_test'])
+        y_pred = model.predict(self.dataset['final_test'].x)
 
-        metric = self.fitness_metric(self.dataset['y_test'], y_pred)
+        metric = self.fitness_metric(y_pred, self.dataset['final_test'])
         return metric

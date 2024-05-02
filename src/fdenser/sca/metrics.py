@@ -1,5 +1,4 @@
 import logging
-import random
 import sys
 import h5py
 import numpy as np
@@ -78,27 +77,20 @@ def simple_guessing_entropy(predictions, metadata, correct_key, alpha=100):
     return avg_rank
 
 def generalized_guessing_entropy(predictions, metadata, correct_key, r=0.99):
-    random.seed(42)
+    # logger.debug(f'Computing GGE with random state: {random.getstate()}')
+    logger.debug(f'{len(predictions)} predictions, {len(metadata)} metadata, correct key {correct_key}')
     subset_size = int(len(predictions) * r)
-    to_shuffle = list(zip(predictions, metadata))
-    random.shuffle(to_shuffle)
-    predictions_shuffled, metadata_shuffled = zip(*to_shuffle)
     ranks = []
-    for i in range(0, len(predictions_shuffled), subset_size):
-        predictions_subset = predictions_shuffled[i:i+subset_size]
-        metadata_subset = metadata_shuffled[i:i+subset_size]
+    for i in range(0, len(predictions), subset_size):
+        predictions_subset = predictions[i:i+subset_size]
+        metadata_subset = metadata[i:i+subset_size]
         r = rank(predictions_subset, metadata_subset, correct_key)
         ranks.append(r)
     avg_rank = sum(ranks) / len(ranks)
-    # Rank is inverted because engine tries to maximize
     return avg_rank
 
-
-f = h5py.File('ASCAD.h5', 'r')
-metadata = f['Attack_traces/metadata']
-target_byte = 2
-correct_key = metadata[0]['key'][target_byte]
-
-def gge(yp, p):
-    return generalized_guessing_entropy(p, metadata, correct_key)
-
+def gge(predictions, dataset_stage):
+    target_byte = 2
+    correct_key = dataset_stage.meta[0]['key'][target_byte]
+    return generalized_guessing_entropy(
+        predictions, dataset_stage.meta, correct_key)
