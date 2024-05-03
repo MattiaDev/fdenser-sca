@@ -66,6 +66,22 @@ def save_pop(population, run_path, gen):
         f_json.write(json.dumps(json_dump, indent=4))
 
 
+def save_best(best, run_path):
+    best_json = {
+        'id': best.id,
+        'phenotype': best.phenotype,
+        'fitness': best.fitness,
+        'metrics': best.metrics,
+        'trainable_parameters': best.trainable_parameters,
+        'num_epochs': best.num_epochs,
+        'time': best.time,
+        'train_time': best.train_time,
+    }
+
+    with open(Path(f'{run_path}/best.json'), 'w') as f_json:
+        f_json.write(json.dumps(best_json, indent=4))
+
+
 def pickle_evaluator(evaluator, run_path):
     """
         Save the Evaluator instance to later enable resuming evolution

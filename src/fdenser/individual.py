@@ -268,7 +268,7 @@ class Individual:
             self.metrics = metrics
             if 'accuracy_test' in metrics:
                 if self.metrics['accuracy_test'] is None:
-                    self.fitness = -1
+                    self.fitness = float('nan')
                     logger.warning(f'Failed to evaluate individual {self.id}')
                 elif type(self.metrics['accuracy_test']) is float:
                     self.fitness = self.metrics['accuracy_test']
@@ -285,7 +285,7 @@ class Individual:
         else:
             logger.warning(f'Failed to train individual {self.id}')
             self.metrics = None
-            self.fitness = -1
+            self.fitness = float('nan')
             self.num_epochs = 0
             self.trainable_parameters = -1
             self.current_time = 0
