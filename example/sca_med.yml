@@ -3,7 +3,7 @@ evolutionary:
   num_generations: 30
 
   # lambda, i.e., number of offspring
-  lambda: 4
+  lambda: 5
 
   # maximum of epochs to perform. Evolution is halted when the current number of epochs surpasses this value
   max_epochs: 6000
@@ -62,4 +62,4 @@ setup:
     2500, 2600, 2700, 2800, 2900]
   
   # place where the experiment is saved
-  save_path: ./experiments/balanced-testset/
+  save_path: ./experiments/newgrammar/

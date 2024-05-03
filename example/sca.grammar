@@ -1,6 +1,6 @@
-<features> ::= <convolution> | <convolution> | <pooling> | <dropout>
-<convolution> ::= layer:conv1d [num-filters,int,1,32,256] [filter-shape,int,1,2,10] [stride,int,1,1,10] <padding> <activation-function> <bias>
-<pooling> ::= <pool-type> [kernel-size,int,1,2,10] [stride,int,1,1,10] <padding>
+<features> ::= <convolution> | <convolution> | <pooling>
+<convolution> ::= layer:conv1d [num-filters,int,1,32,1024] [filter-shape,int,1,2,20] [stride,int,1,1,20] <padding> <activation-function> <bias>
+<pooling> ::= <pool-type> [kernel-size,int,1,2,20] [stride,int,1,1,20] <padding>
 <pool-type> ::= layer:pool-avg1d | layer:pool-max1d
 <padding> ::= padding:same | padding:valid
 <dropout> ::= layer:dropout [rate,float,1,0,0.7]

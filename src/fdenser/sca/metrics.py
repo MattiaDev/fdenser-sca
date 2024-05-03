@@ -79,7 +79,7 @@ def simple_guessing_entropy(predictions, metadata, correct_key, alpha=100):
 def generalized_guessing_entropy(predictions, metadata, correct_key, r=0.99):
     # logger.debug(f'Computing GGE with random state: {random.getstate()}')
     logger.debug(f'{len(predictions)} predictions, {len(metadata)} metadata, correct key {correct_key}')
-    subset_size = int(len(predictions) * r)
+    subset_size = int(len(predictions) * (1 -r))
     ranks = []
     for i in range(0, len(predictions), subset_size):
         predictions_subset = predictions[i:i+subset_size]

@@ -545,6 +545,7 @@ def main(run, dataset, input_shape, config, grammar):
             config.evo.minimize,
 	)
         logger.debug(f'Fittest individual is {parent.id}')
+        logger.debug(f'Fittest individual has phenotype: {parent.phenotype}')
 
         # remove temporary files to free disk space
         if gen > 1:
