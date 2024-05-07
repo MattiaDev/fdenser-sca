@@ -228,7 +228,13 @@ class Individual:
         start = time()
 
         load_prev_weights = True
+        # Unless our mutation changed the training time only (thereby
+        # leaving the structure untouched), then we will reload
+        # previous weights
         if self.current_time == 0:
+            # otherwise the mutation of the structure will reset the
+            # current_time field to 0 and we won't load any previous
+            # weights
             load_prev_weights = False
 
         train_time = self.train_time - self.current_time

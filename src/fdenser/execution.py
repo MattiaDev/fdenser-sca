@@ -79,7 +79,7 @@ def save_best(best, run_path):
     }
 
     with open(Path(f'{run_path}/best.json'), 'w') as f_json:
-        f_json.write(json.dumps(best_json, indent=4))
+        f_json.write(json.dumps(best_json, indent=4).replace('NaN', '"NaN"'))
 
 
 def pickle_evaluator(evaluator, run_path):

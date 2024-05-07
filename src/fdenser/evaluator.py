@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import math
 import os
 
 import keras
@@ -539,7 +540,7 @@ class Evaluator:
             verbose=DEBUG
         )
 
-        # save final moodel to file
+        # save final model to file
         model.save(weights_save_path)
 
         # measure test performance
@@ -548,6 +549,13 @@ class Evaluator:
         accuracy_test = self.fitness_metric(
             y_pred_test, self.dataset['test'])
         logger.debug(f'Fitness score: {accuracy_test}')
+
+        if math.isclose(accuracy_test, 31.0, rel_tol=1e-2):
+            logger.warning('Something got wrong, using fitness=-1 as a temporary workaround')
+            logger.debug(f'Bugged individual phenotype: {phenotype}')
+            logger.debug(f'Bugged individual params: {score.params}')
+            logger.debug(f'Bugged individual history: {score.history}')
+            accuracy_test = float('nan')
 
         if DEBUG:
             print(phenotype, accuracy_test)

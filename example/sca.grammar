@@ -1,4 +1,4 @@
-<features> ::= <convolution> | <convolution> | <pooling>
+<features> ::= <pooling> | <convolution>
 <convolution> ::= layer:conv1d [num-filters,int,1,32,1024] [filter-shape,int,1,2,20] [stride,int,1,1,20] <padding> <activation-function> <bias>
 <pooling> ::= <pool-type> [kernel-size,int,1,2,20] [stride,int,1,1,20] <padding>
 <pool-type> ::= layer:pool-avg1d | layer:pool-max1d

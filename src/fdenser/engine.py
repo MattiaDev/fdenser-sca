@@ -301,6 +301,7 @@ def mutation(individual, grammar, add_layer, re_use_layer, remove_layer,
     # Train individual for longer - no other mutation is applied
     if random.random() <= train_longer:
         ind.train_time += default_train_time
+        logger.debug(f'Mutation on {ind.id}: increase time to {ind.train_time}')
         return ind
 
     # in case the individual is mutated in any of the structural parameters
@@ -309,12 +310,14 @@ def mutation(individual, grammar, add_layer, re_use_layer, remove_layer,
     ind.num_epochs = 0
     ind.train_time = default_train_time
 
+    # modules should either be feature or classification
     for module in ind.modules:
 
         # add-layer (duplicate or new)
         for _ in range(random.randint(1, 2)):
             if len(module.layers) < module.max_expansions and \
                random.random() <= add_layer:
+                logger.debug(f'Mutation on {ind.id}: add layer')
                 if random.random() <= re_use_layer:
                     new_layer = random.choice(module.layers)
                 else:
@@ -358,6 +361,7 @@ def mutation(individual, grammar, add_layer, re_use_layer, remove_layer,
         for _ in range(random.randint(1, 2)):
             if len(module.layers) > module.min_expansions and \
                random.random() <= remove_layer:
+                logger.debug(f'Mutation on {ind.id}: remove layer')
                 remove_idx = random.randint(0, len(module.layers)-1)
                 del module.layers[remove_idx]
 
@@ -381,9 +385,11 @@ def mutation(individual, grammar, add_layer, re_use_layer, remove_layer,
             # dsge mutation
             if random.random() <= dsge_layer:
                 mutation_dsge(layer, grammar)
+                logger.debug(f'Mutation on {ind.id}: dsge mutation')
 
             # add connection
             if layer_idx != 0 and random.random() <= add_connection:
+                logger.debug(f'Mutation on {ind.id}: add connection')
                 connection_possibilities = list(
                     range(max(0, layer_idx-module.levels_back), layer_idx-1))
                 connection_possibilities = list(
@@ -397,6 +403,7 @@ def mutation(individual, grammar, add_layer, re_use_layer, remove_layer,
             # remove connection
             r_value = random.random()
             if layer_idx != 0 and r_value <= remove_connection:
+                logger.debug(f'Mutation on {ind.id}: remove connection')
                 connection_possibilities = list(
                     set(module.connections[layer_idx])
                     - set([layer_idx-1])
@@ -405,9 +412,10 @@ def mutation(individual, grammar, add_layer, re_use_layer, remove_layer,
                     r_connection = random.choice(connection_possibilities)
                     module.connections[layer_idx].remove(r_connection)
 
-    # macro level mutation
+    # macro level mutation (at the moment learning only)
     for macro_idx, macro in enumerate(ind.macro):
         if random.random() <= macro_layer:
+            logger.debug(f'Mutation on {ind.id}: macro mutation')
             mutation_dsge(macro, grammar)
 
     return ind
@@ -558,7 +566,7 @@ def main(run, dataset, input_shape, config, grammar):
         parent = select_fittest(
             population, population_fits, grammar, cnn_eval, gen, run_path,
             config.evo.default_train_time, fitness_comparator,
-	)
+	    )
         logger.debug(f'Fittest individual is {parent.id}')
         logger.debug(f'Fittest individual has phenotype: {parent.phenotype}')
 
