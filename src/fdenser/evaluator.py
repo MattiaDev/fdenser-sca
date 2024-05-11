@@ -321,6 +321,7 @@ class Evaluator:
             # END ADD NEW LAYERS
 
         # Connection between layers
+        # make the input field a list of integers
         for layer in keras_layers:
             layer[1]['input'] = list(map(int, layer[1]['input']))
 
@@ -338,7 +339,7 @@ class Evaluator:
                     else:
                         if keras_layers[layer_idx][0] == 'fc' and first_fc:
                             first_fc = False
-                            logger.debug(f'First FC layer Input {data_layers[keras_layers[layer_idx][1]["input"][0]]}')
+                            # logger.debug(f'First FC layer Input {data_layers[keras_layers[layer_idx][1]["input"][0]]}')
                             flatten = keras.layers.Flatten()(
                                 data_layers[keras_layers[layer_idx][1]['input'][0]])
                             data_layers.append(layer(flatten))
@@ -496,6 +497,7 @@ class Evaluator:
         batch_size = int(keras_learning['batch_size'])
 
         if load_prev_weights and os.path.exists(parent_weights_path):
+            logger.debug('loading previous weights')
             model = keras.models.load_model(parent_weights_path)
 
         else:
@@ -526,7 +528,7 @@ class Evaluator:
 
         trainable_count = model.count_params()
 
-        logger.debug('Starting model training')
+        logger.debug(f'Starting model training from epoch {num_epochs}')
         score = model.fit(
             x=self.dataset['train'].x,
             y=self.dataset['train'].y,

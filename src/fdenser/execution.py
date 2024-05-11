@@ -82,6 +82,22 @@ def save_best(best, run_path):
         f_json.write(json.dumps(best_json, indent=4).replace('NaN', '"NaN"'))
 
 
+def save_parent(parent, run_path, generation):
+    parent_json = {
+        'id': parent.id,
+        'phenotype': parent.phenotype,
+        'fitness': parent.fitness,
+        'metrics': parent.metrics,
+        'trainable_parameters': parent.trainable_parameters,
+        'num_epochs': parent.num_epochs,
+        'time': parent.time,
+        'train_time': parent.train_time,
+    }
+
+    with open(Path(f'{run_path}/parent_{generation:02d}.json'), 'w') as f_json:
+        f_json.write(json.dumps(parent_json, indent=4).replace('NaN', '"NaN"'))
+
+
 def pickle_evaluator(evaluator, run_path):
     """
         Save the Evaluator instance to later enable resuming evolution

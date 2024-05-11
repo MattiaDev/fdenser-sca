@@ -32,6 +32,7 @@ from .execution import (
     pickle_evaluator,
     pickle_population,
     save_best,
+    save_parent,
     save_pop,
     unpickle_population,
 )
@@ -297,6 +298,7 @@ def mutation(individual, grammar, add_layer, re_use_layer, remove_layer,
 
     # copy so that elite is preserved
     ind = deepcopy(individual)
+    logger.debug('Mutation of parent individual:')
 
     # Train individual for longer - no other mutation is applied
     if random.random() <= train_longer:
@@ -312,74 +314,68 @@ def mutation(individual, grammar, add_layer, re_use_layer, remove_layer,
 
     # modules should either be feature or classification
     for module in ind.modules:
+        if len(module.layers) < module.max_expansions and \
+           random.random() <= add_layer:
+            logger.debug(f'Mutation on {ind.id}: add layer')
+            if random.random() <= re_use_layer:
+                new_layer = random.choice(module.layers)
+            else:
+                new_layer = grammar.initialise(module.module)
 
-        # add-layer (duplicate or new)
-        for _ in range(random.randint(1, 2)):
-            if len(module.layers) < module.max_expansions and \
-               random.random() <= add_layer:
-                logger.debug(f'Mutation on {ind.id}: add layer')
-                if random.random() <= re_use_layer:
-                    new_layer = random.choice(module.layers)
-                else:
-                    new_layer = grammar.initialise(module.module)
+            insert_pos = random.randint(0, len(module.layers))
 
-                insert_pos = random.randint(0, len(module.layers))
+            # fix connections
+            for _key_ in sorted(module.connections, reverse=True):
+                if _key_ >= insert_pos:
+                    for value_idx, value in enumerate(module.connections[_key_]):
+                        if value >= insert_pos-1:
+                            module.connections[_key_][value_idx] += 1
 
-                # fix connections
-                for _key_ in sorted(module.connections, reverse=True):
-                    if _key_ >= insert_pos:
-                        for value_idx, value in enumerate(module.connections[_key_]):
-                            if value >= insert_pos-1:
-                                module.connections[_key_][value_idx] += 1
+                    module.connections[_key_+1] = module.connections.pop(_key_)
 
-                        module.connections[_key_+1] = module.connections.pop(_key_)
+            module.layers.insert(insert_pos, new_layer)
 
-                module.layers.insert(insert_pos, new_layer)
-
-                # make connections of the new layer
-                if insert_pos == 0:
-                    module.connections[insert_pos] = [-1]
-                else:
-                    connection_possibilities = list(
-                        range(
-                            max(0, insert_pos-module.levels_back),
-                            insert_pos-1,
-                        )
+            # make connections of the new layer
+            if insert_pos == 0:
+                module.connections[insert_pos] = [-1]
+            else:
+                connection_possibilities = list(
+                    range(
+                        max(0, insert_pos-module.levels_back),
+                        insert_pos-1,
                     )
-                    if len(connection_possibilities) < module.levels_back-1:
-                        connection_possibilities.append(-1)
+                )
+                if len(connection_possibilities) < module.levels_back-1:
+                    connection_possibilities.append(-1)
 
-                    sample_size = random.randint(
-                        0, len(connection_possibilities))
+                sample_size = random.randint(
+                    0, len(connection_possibilities))
 
-                    module.connections[insert_pos] = [insert_pos-1]
-                    if sample_size > 0:
-                        module.connections[insert_pos] += random.sample(
-                            connection_possibilities, sample_size)
+                module.connections[insert_pos] = [insert_pos-1]
+                if sample_size > 0:
+                    module.connections[insert_pos] += random.sample(
+                        connection_possibilities, sample_size)
+        if len(module.layers) > module.min_expansions and \
+           random.random() <= remove_layer:
+            logger.debug(f'Mutation on {ind.id}: remove layer')
+            remove_idx = random.randint(0, len(module.layers)-1)
+            del module.layers[remove_idx]
 
-        # remove-layer
-        for _ in range(random.randint(1, 2)):
-            if len(module.layers) > module.min_expansions and \
-               random.random() <= remove_layer:
-                logger.debug(f'Mutation on {ind.id}: remove layer')
-                remove_idx = random.randint(0, len(module.layers)-1)
-                del module.layers[remove_idx]
+            # fix connections
+            for _key_ in sorted(module.connections):
+                if _key_ > remove_idx:
+                    if _key_ > remove_idx+1 and \
+                       remove_idx in module.connections[_key_]:
+                        module.connections[_key_].remove(remove_idx)
 
-                # fix connections
-                for _key_ in sorted(module.connections):
-                    if _key_ > remove_idx:
-                        if _key_ > remove_idx+1 and \
-                           remove_idx in module.connections[_key_]:
-                            module.connections[_key_].remove(remove_idx)
+                    for value_idx, value in enumerate(module.connections[_key_]):
+                        if value >= remove_idx:
+                            module.connections[_key_][value_idx] -= 1
+                    module.connections[_key_-1] = list(
+                        set(module.connections.pop(_key_)))
 
-                        for value_idx, value in enumerate(module.connections[_key_]):
-                            if value >= remove_idx:
-                                module.connections[_key_][value_idx] -= 1
-                        module.connections[_key_-1] = list(
-                            set(module.connections.pop(_key_)))
-
-                if remove_idx == 0:
-                    module.connections[0] = [-1]
+            if remove_idx == 0:
+                module.connections[0] = [-1]
 
         for layer_idx, layer in enumerate(module.layers):
             # dsge mutation
@@ -543,6 +539,7 @@ def main(run, dataset, input_shape, config, grammar):
                 for _ in range(config.evo.es_lambda)
             ]
 
+            # population of 5 element where at index 0 there is the parent
             population = [parent] + offspring
 
             # set elite variables to re-evaluation
@@ -553,6 +550,7 @@ def main(run, dataset, input_shape, config, grammar):
             # evaluate population
             population_fits = []
             for idx, ind in enumerate(population):
+                ind.id = idx
                 population_fits.append(
                     ind.evaluate(
                         grammar,
@@ -561,7 +559,6 @@ def main(run, dataset, input_shape, config, grammar):
                         f'{run_path}/best_{gen-1}_{parent_id}.h5',
                     )
                 )
-                ind.id = idx
 
         parent = select_fittest(
             population, population_fits, grammar, cnn_eval, gen, run_path,
@@ -569,6 +566,7 @@ def main(run, dataset, input_shape, config, grammar):
 	    )
         logger.debug(f'Fittest individual is {parent.id}')
         logger.debug(f'Fittest individual has phenotype: {parent.phenotype}')
+        save_parent(parent, run_path, gen)
 
         # remove temporary files to free disk space
         if gen > 1:

@@ -142,7 +142,6 @@ class Individual:
                 min_expansions,
                 max_expansions,
                 levels_back[non_terminal],
-                min_expansions
             )
             new_module.initialise(grammar, reuse, init_max)
 
@@ -235,6 +234,7 @@ class Individual:
             # otherwise the mutation of the structure will reset the
             # current_time field to 0 and we won't load any previous
             # weights
+            logger.debug('Current time is 0: training will start from scratch')
             load_prev_weights = False
 
         train_time = self.train_time - self.current_time

@@ -33,8 +33,7 @@ class Module:
                 Randomly creates a module
     """
 
-    def __init__(self, module, min_expansions, max_expansions,
-                 levels_back, min_expansins):
+    def __init__(self, module, min_expansions, max_expansions, levels_back):
         """
             Parameters
             ----------
@@ -52,13 +51,13 @@ class Module:
         """
 
         self.module = module
-        self.min_expansions = min_expansins
+        self.min_expansions = min_expansions
         self.max_expansions = max_expansions
         self.levels_back = levels_back
         self.layers = []
         self.connections = {}
 
-    def initialise(self, grammar, reuse, init_max):
+    def initialise(self, grammar, reuse, potential_num_expansions):
         """
             Randomly creates a module
 
@@ -76,7 +75,7 @@ class Module:
                 training data: loss and accuracy
         """
 
-        num_expansions = random.choice(init_max[self.module])
+        num_expansions = random.choice(potential_num_expansions[self.module])
 
         # Initialise layers
         for idx in range(num_expansions):

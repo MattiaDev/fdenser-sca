@@ -78,7 +78,7 @@ def simple_guessing_entropy(predictions, metadata, correct_key, alpha=100):
 
 def generalized_guessing_entropy(predictions, metadata, correct_key, r=0.99):
     # logger.debug(f'Computing GGE with random state: {random.getstate()}')
-    logger.debug(f'{len(predictions)} predictions, {len(metadata)} metadata, correct key {correct_key}')
+    # logger.debug(f'{len(predictions)} predictions, {len(metadata)} metadata, correct key {correct_key}')
     subset_size = int(len(predictions) * (1 -r))
     ranks = []
     for i in range(0, len(predictions), subset_size):
@@ -94,3 +94,31 @@ def gge(predictions, dataset_stage):
     correct_key = dataset_stage.meta[0]['key'][target_byte]
     return generalized_guessing_entropy(
         predictions, dataset_stage.meta, correct_key)
+
+
+def trace_count(predictions, metadata, correct_key, target_byte=2):
+    key_probs = np.zeros(256)
+
+    counter = 0
+    for p, m in zip(predictions, metadata):
+        plaintext = m['plaintext'][target_byte]
+        for key in range(256):
+            sbox_value = AES_Sbox[plaintext ^ key]
+            # the probability of the key is associated to the
+            # output of the sbox computation
+            key_probability = p[sbox_value]
+            if key_probability > 0:
+                key_probs[key] += np.log(key_probability)
+            else:
+                #print('Error: we got a negative probability')
+                nonzero_predictions = p[np.where(p != 0)]
+                if len(nonzero_predictions) == 0:
+                    raise ValueError
+                min_probability = min(nonzero_predictions)
+                key_probs[key] += np.log(min_probability ** 2)
+        kgv = key_guessing_vector(key_probs)
+        r = rank_from_key_guessing_vector(kgv, correct_key)
+        if r == 0:
+            return counter
+        counter += 1
+    return counter
