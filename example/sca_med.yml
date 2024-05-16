@@ -1,9 +1,8 @@
-evolutionary:
-  # Maximum number of generations
+evolutionary: # Maximum number of generations
   num_generations: 30
 
   # lambda, i.e., number of offspring
-  lambda: 4
+  lambda: 5
 
   # maximum of epochs to perform. Evolution is halted when the current number of epochs surpasses this value
   max_epochs: 10000
@@ -12,7 +11,7 @@ evolutionary:
   default_train_time: 400
 
   # fitness assignment metric
-  fitness_metric: gge
+  fitness_metric: combined
   minimize: true
 
   # rates of the different mutations [0, 1]
@@ -22,16 +21,16 @@ evolutionary:
     remove_layer: 0.25
     add_connection: 0
     remove_connection: 0
-    dsge_layer: 0.15
-    macro_layer: 0.3
+    dsge_layer: 0.3
+    macro_layer: 0.2
     train_longer: 0.2
 
 # network specific parameters
 network:
   # structure fo the hidden layers of the network [[non-terminal, min, max], ...]
   network_structure:
-    - [features, 1, 20]
-    - [classification, 1, 7]
+    - [features, 1, 15]
+    - [classification, 1, 5]
 
   # output layer
   output: output
@@ -43,8 +42,8 @@ network:
   # NN will have either 4, 5, 6 feature layers
   # and 2 or 3 classification layer
   network_structure_init: 
-    features: [4, 5, 6]
-    classification: [2, 3]
+    features: [3, 4, 5]
+    classification: [1, 2, 3]
 
   # number of levels back for each of the blocks
   levels_back:
@@ -64,4 +63,4 @@ setup:
     2500, 2600, 2700, 2800, 2900, 3000]
   
   # place where the experiment is saved
-  save_path: ./experiments/lessmutations/
+  save_path: ./experiments/combinedmetric-newgrammar2/

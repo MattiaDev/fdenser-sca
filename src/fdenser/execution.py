@@ -14,7 +14,7 @@ from .config import Config
 from .img import fitness_metrics
 from .img.data import load_dataset as img_load_dataset
 from .sca.data import load_dataset as sca_load_dataset
-from .sca.metrics import rank, gge
+from .sca.metrics import rank, gge, combined
 
 
 def save_pop(population, run_path, gen):
@@ -300,6 +300,9 @@ def load_config(config_file, run):
     elif config['evolutionary']['fitness_metric'] == 'gge':
         config['evolutionary']['fitness_function'] = gge
         print('GGE metric')
+    elif config['evolutionary']['fitness_metric'] == 'combined':
+        config['evolutionary']['fitness_function'] = combined
+        print('Rank GGE combined metric')
     else:
         raise ValueError(
             'Invalid fitness metric in config file: '

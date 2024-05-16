@@ -59,8 +59,12 @@ class FitnessComparator:
             return np.nanargmax(fitness_array)
 
     def is_better(self, fitness_a, fitness_b):
-        if math.isnan(fitness_a) or math.isnan(fitness_b):
+        if math.isnan(fitness_a) and math.isnan(fitness_b):
             raise ValueError
+        if math.isnan(fitness_a):
+            return False
+        if math.isnan(fitness_b):
+            return True
         if self.minimize:
             return fitness_a < fitness_b
         else:
@@ -312,11 +316,9 @@ def mutation(individual, grammar, add_layer, re_use_layer, remove_layer,
     ind.num_epochs = 0
     ind.train_time = default_train_time
 
-    # modules should either be feature or classification
-    for module in ind.modules:
-        if len(module.layers) < module.max_expansions and \
-           random.random() <= add_layer:
-            logger.debug(f'Mutation on {ind.id}: add layer')
+    if random.random() <= add_layer:
+        module = random.choice(ind.modules)
+        if len(module.layers) < module.max_expansions:
             if random.random() <= re_use_layer:
                 new_layer = random.choice(module.layers)
             else:
@@ -355,9 +357,11 @@ def mutation(individual, grammar, add_layer, re_use_layer, remove_layer,
                 if sample_size > 0:
                     module.connections[insert_pos] += random.sample(
                         connection_possibilities, sample_size)
-        if len(module.layers) > module.min_expansions and \
-           random.random() <= remove_layer:
-            logger.debug(f'Mutation on {ind.id}: remove layer')
+            logger.debug(f'Mutation on {ind.id}: add layer')
+
+    if random.random() <= remove_layer:
+        module = random.choice(ind.modules)
+        if len(module.layers) > module.min_expansions:
             remove_idx = random.randint(0, len(module.layers)-1)
             del module.layers[remove_idx]
 
@@ -376,43 +380,50 @@ def mutation(individual, grammar, add_layer, re_use_layer, remove_layer,
 
             if remove_idx == 0:
                 module.connections[0] = [-1]
+            logger.debug(f'Mutation on {ind.id}: remove layer')
 
-        for layer_idx, layer in enumerate(module.layers):
-            # dsge mutation
-            if random.random() <= dsge_layer:
-                mutation_dsge(layer, grammar)
-                logger.debug(f'Mutation on {ind.id}: dsge mutation')
+    if random.random() <= dsge_layer:
+        module = random.choice(ind.modules)
+        layer = random.choice(module.layers)
+        mutation_dsge(layer, grammar)
+        logger.debug(f'Mutation on {ind.id}: dsge mutation')
 
-            # add connection
-            if layer_idx != 0 and random.random() <= add_connection:
+
+    if random.random() <= add_connection:
+        module = random.choice(ind.modules)
+        idx, layer = random.choice(enumerate(module.layers))
+        # add connection
+        if layer_idx != 0:
+            connection_possibilities = list(
+                range(max(0, layer_idx-module.levels_back), layer_idx-1))
+            connection_possibilities = list(
+                set(connection_possibilities)
+                - set(module.connections[layer_idx])
+            )
+            if len(connection_possibilities) > 0:
+                module.connections[layer_idx].append(
+                    random.choice(connection_possibilities))
                 logger.debug(f'Mutation on {ind.id}: add connection')
-                connection_possibilities = list(
-                    range(max(0, layer_idx-module.levels_back), layer_idx-1))
-                connection_possibilities = list(
-                    set(connection_possibilities)
-                    - set(module.connections[layer_idx])
-                )
-                if len(connection_possibilities) > 0:
-                    module.connections[layer_idx].append(
-                        random.choice(connection_possibilities))
 
-            # remove connection
-            r_value = random.random()
-            if layer_idx != 0 and r_value <= remove_connection:
+    if random.random() <= remove_connection:
+        module = random.choice(ind.modules)
+        idx, layer = random.choice(enumerate(module.layers))
+        # remove connection
+        if layer_idx != 0:
+            connection_possibilities = list(
+                set(module.connections[layer_idx])
+                - set([layer_idx-1])
+            )
+            if len(connection_possibilities) > 0:
+                r_connection = random.choice(connection_possibilities)
+                module.connections[layer_idx].remove(r_connection)
                 logger.debug(f'Mutation on {ind.id}: remove connection')
-                connection_possibilities = list(
-                    set(module.connections[layer_idx])
-                    - set([layer_idx-1])
-                )
-                if len(connection_possibilities) > 0:
-                    r_connection = random.choice(connection_possibilities)
-                    module.connections[layer_idx].remove(r_connection)
 
     # macro level mutation (at the moment learning only)
-    for macro_idx, macro in enumerate(ind.macro):
-        if random.random() <= macro_layer:
-            logger.debug(f'Mutation on {ind.id}: macro mutation')
-            mutation_dsge(macro, grammar)
+    if random.random() <= macro_layer:
+        macro = random.choice(ind.macro)
+        mutation_dsge(macro, grammar)
+        logger.debug(f'Mutation on {ind.id}: macro mutation')
 
     return ind
 
@@ -477,7 +488,7 @@ def main(run, dataset, input_shape, config, grammar):
         if (total_epochs is not None and \
            total_epochs >= config.evo.max_epochs) or \
            (best_fitness is not None and \
-           0 <= best_fitness <= 10):
+           0 <= best_fitness <= 0.010):
             break
 
         if gen == 0:

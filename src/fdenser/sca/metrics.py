@@ -57,7 +57,7 @@ def key_guessing_vector(probabilities):
 
 def rank_from_key_guessing_vector(key_guessing_vector, correct_key):
     correct_key_position = np.where(key_guessing_vector == correct_key)[0][0]
-    return correct_key_position
+    return int(correct_key_position)
 
 def rank(predictions, metadata, correct_key):
     kps = key_probabilities(predictions, metadata)
@@ -122,3 +122,15 @@ def trace_count(predictions, metadata, correct_key, target_byte=2):
             return counter
         counter += 1
     return counter
+
+
+def combined(predictions, dataset_stage):
+    target_byte = 2
+    correct_key = dataset_stage.meta[0]['key'][target_byte]
+    r = rank(predictions, dataset_stage.meta, correct_key)
+    if r != 0:
+        return r
+    else:
+        ge = generalized_guessing_entropy(predictions,
+            dataset_stage.meta, correct_key)
+        return ge / 1000

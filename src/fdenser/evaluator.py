@@ -428,6 +428,9 @@ class Evaluator:
                 keras optimiser that will be later used to train the model
         """
 
+        if learning['learning'] == 'adam-std':
+            return keras.optimizers.Adam()
+
         initial_learning_rate = float(learning['lr'])
         lr_schedule = keras.optimizers.schedules.InverseTimeDecay(
             initial_learning_rate,
@@ -448,6 +451,7 @@ class Evaluator:
             return keras.optimizers.Adam(learning_rate=lr_schedule,
                                          beta_1=float(learning['beta1']),
                                          beta_2=float(learning['beta2']))
+
 
     def evaluate(self, phenotype, load_prev_weights, weights_save_path,
                  parent_weights_path, train_time, num_epochs,
